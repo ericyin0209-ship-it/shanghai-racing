@@ -91,3 +91,6 @@ Procedural estimated service/pavement detailing was informed by FIA 2025 Chinese
 - Precision service-equipment geometry: original geometry authored for this simulator, in metres. Photograph-inspired, not surveyed team CAD.
 - Open pit-bay details reference: CyberCop, “F-1 Circuit Shanghai”, [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:F-1_Circuit_Shanghai_-_panoramio.jpg), [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Photograph is retained only as a work reference; it is not embedded as a game texture.
 - RectAreaLightUniformsLib, RectAreaLightTexturesLib and RoundedBoxGeometry: Three.js r180, MIT, existing vendor/THREE-LICENSE.txt applies.
+
+## Local weather
+Weather data: [Open-Meteo](https://open-meteo.com/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Regional coordinates are requested only with player permission; no coordinates are persisted in the game archive.

@@ -1,6 +1,9 @@
 import {upgradeRows} from './upgrade-language.js';
 export const languages=['zh-CN','en','fr','ja','ko'];
 const rows=[
+['载入失败，请重试。','Loading failed. Please try again.','Échec du chargement. Réessayez.','読み込みに失敗しました。もう一度お試しください。','불러오지 못했습니다. 다시 시도해 주세요.'],
+['极点 / DRIVING SIMULATOR','SHANGHAI DRIVING SIMULATOR','SIMULATEUR DE PILOTAGE','上海ドライビングシミュレーター','상하이 드라이빙 시뮬레이터'],
+['正在加载模型与地图','Loading models and map','Chargement des modèles et de la carte','モデルとマップを読み込み中','모델과 맵을 불러오는 중'],
 ["车载视角","T-cam onboard","Caméra embarquée","車載カメラ","온보드 카메라"],
 ["继续", "Resume", "Reprendre", "再開", "계속"],
 ["追尾视角", "Chase camera", "Caméra arrière", "追従視点", "추적 시점"],

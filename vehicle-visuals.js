@@ -4,7 +4,9 @@ export {wheelAngles} from './vehicle-kinematics.js';
 export function applyWheelPose(car,steer,distance,wheelStates=null){
   const angles=wheelAngles(steer,car.userData.wheelbase||3.4,car.userData.trackWidth||1.527);for(const pivot of car.userData.frontWheels)pivot.rotation.y=pivot.position.x>0?angles.left:angles.right;
   for(let i=0;i<car.userData.wheels.length;i++)car.userData.wheels[i].rotation.x=wheelStates?.[i]?.spin??distance/(car.userData.wheelRadius||.329);
-  car.userData.steering.rotation.z=steer*2.2;return angles;
+  // Forward is +Z: positive steering turns toward driver-left (+X).
+  // Viewed from the cockpit, the wheel top must move toward that same side.
+  car.userData.steering.rotation.z=-steer*2.2;return angles;
 }
 
 // Render the same wheel contact state and suspended-body pose used by physics.

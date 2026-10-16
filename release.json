@@ -1,6 +1,7 @@
 {
-  "version": "2.0.0-preview.1",
+  "version": "2.0.0-preview.3",
   "channel": "web-preview",
   "nativeIncluded": false,
-  "telemetryUpload": false
+  "telemetryUpload": false,
+  "displayName": "VERTEX 极点"
 }

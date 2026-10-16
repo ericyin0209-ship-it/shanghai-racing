@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-preview.1",
+  "version": "2.0.0-preview.3",
   "cars": [
     {
       "id": "green",
@@ -199,5 +199,6 @@
     "shadows": "Texel-stabilised directional grid, restricted depth range; local contact occlusion and HDR highlights",
     "physics": "Per-contact traction budgeting, contact relaxation, independent tyre/brake thermal masses, directional barrier response; not real AMR23 calibration"
   },
-  "release_channel": "web-preview"
+  "release_channel": "web-preview",
+  "displayName": "VERTEX 极点"
 }
