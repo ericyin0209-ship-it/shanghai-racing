@@ -1,4 +1,6 @@
 export const upgradeRows=[
+['主看台背面','Main stand rear','Arrière de la tribune principale','メインスタンド背面','메인 관람석 후면'],
+['莲叶看台背面','Lotus stand rear','Arrière de la tribune lotus','蓮の葉スタンド背面','연잎 관람석 후면'],
 ["驾驶档案", "Driver archive", "Carnet de pilotage", "ドライバー記録", "드라이버 기록"],
 ["累计游玩时间", "Total play time", "Temps de jeu cumulé", "累計プレイ時間", "누적 플레이 시간"],
 ["初次游玩时间", "First played", "Première session", "初回プレイ日時", "첫 플레이 시간"],

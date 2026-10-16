@@ -1,9 +1,53 @@
 import * as THREE from 'three';
-// Estimated enclosure and access floors; shared by track and garage vista.
-export function createCircuitEnvelope(scene){const root=new THREE.Group();root.name='Main grandstand enclosed rear and concourse';scene.add(root);const concrete=new THREE.MeshStandardMaterial({color:'#b0afa6',roughness:.9}),panel=new THREE.MeshStandardMaterial({color:'#87918b',roughness:.64,metalness:.12}),glass=new THREE.MeshPhysicalMaterial({color:'#49616a',metalness:.12,roughness:.14,clearcoat:.7}),dark=new THREE.MeshStandardMaterial({color:'#273738',roughness:.7});
- const batches=new Map(),pose=new THREE.Object3D();function box(key,x,y,z,w,h,d,mat=concrete){if(!batches.has(key))batches.set(key,{g:new THREE.BoxGeometry(w,h,d),mat,items:[]});batches.get(key).items.push([x,y,z]);}
- for(let z=-433;z<-73;z+=12){for(const y of [4.8,10.0,15.2]){box('concourse decks',59,y,z,19,.28,11.9);box('rear facade spandrels',68.9,y+1.15,z,.16,2.1,11.65,panel);box('rear glazing',68.93,y+3.15,z,.09,1.8,11.5,glass);for(const dz of [-5.8,-2.9,0,2.9,5.8])box('window mullions',69.02,y+3.15,z+dz,.12,1.9,.045,dark);box('concourse rear parapet',69.06,y+.55,z,.09,.8,11.7,panel);}box('ground service wall',67.8,2.3,z,.22,4.6,11.7,panel);box('service entrance',67.98,1.35,z,.08,2.7,2.1,dark);box('service entrance transom',68.04,2.95,z,.04,.38,2.3,glass);box('ground concourse paving',73,.08,z,11,.12,12);for(const dz of [-5.9,5.9])box('facade joints',69.06,10,z+dz,.012,18.7,.025,dark);}
- for(const z of [-410,-326,-242,-158,-86]){box('stair tower',72,8.0,z,5.0,15.6,7,panel);for(const y of [3,7,11]){box('stair tower windows',74.55,y,z,.05,1.5,5.7,glass);box('stair landing',71,y-1,z,4.2,.22,6.6);}box('stair tower roof',72,15.96,z,5.5,.16,7.4,panel);}
- for(const b of batches.values()){const mesh=new THREE.InstancedMesh(b.g,b.mat,b.items.length);b.items.forEach((p,i)=>{pose.position.set(...p);pose.updateMatrix();mesh.setMatrixAt(i,pose.matrix);});mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}root.userData.detailCount=[...batches.values()].reduce((a,b)=>a+b.items.length,0);return root;}
+import {createAccessBuilder,accessMaterials,addReturnStair} from './spectator-access.js';
+// Rear entrance architecture follows photographs; dimensions retain the existing site model.
+export function createCircuitEnvelope(scene){
+ const root=new THREE.Group();root.name='Main grandstand enclosed rear and spectator circulation';scene.add(root);
+ const materials=accessMaterials(),{concrete,dark,metal,cladding,glass}=materials,builder=createAccessBuilder(root),{box,beam}=builder;
+ const slabCentres=[4.8,10,15.2,20],levels=[.24,...slabCentres.map(y=>y+.14)],access=[];
+ for(const z of [-410,-326,-242,-158,-86]){
+  const stair=addReturnStair(builder,{x:75.4,z,levels,materials,name:'Main spectator stair'});access.push(stair);
+  for(const level of levels){
+   box('Main stair concourse bridge',[3.15,.24,1.86],[71.25,level-.12,stair.bridgeZ],concrete);
+   for(const side of [-1,1])beam('Main bridge guard',[69.7,level+1.05,stair.bridgeZ+side*.93],[72.8,level+1.05,stair.bridgeZ+side*.93],.045,.045,metal);
+  }
+  for(const xx of [71.95,78.85])for(const zz of [z-4.25,z+4.25])box('Main stair tower corner',[.24,22.8,.24],[xx,11.6,zz],concrete);
+  box('Main stair tower rear enclosure',[.20,22.65,8.6],[78.85,11.5,z],concrete);
+  for(const zz of [z-4.3,z+4.3]){
+   box('Main tower glazing',[6.75,19.3,.12],[75.4,12.65,zz],glass);
+   box('Main tower ground wall',[6.75,2.5,.18],[75.4,1.5,zz],metal);
+   for(const level of levels)box('Main tower floor bands',[6.8,.22,.20],[75.4,level-.1,zz],metal);
+   for(const offset of [-2.25,-.75,.75,2.25])box('Main tower window mullions',[.08,19.3,.16],[75.4+offset,12.65,zz],metal);
+  }
+  box('Main access tower roof',[7.45,.22,9.1],[75.4,23.06,z],metal);
+ }
+ const floors=[{y:4.8,edge:36.8},{y:10,edge:46},{y:15.2,edge:54.7},{y:20,edge:62.575}];
+ for(const {y,edge}of floors)box('Main enclosed concourse slab '+y,[69.8-edge,.28,372],[(69.8+edge)/2,y,-253],concrete);
+ box('Main ground entry paving',[16,.16,378],[74,.08,-253],concrete);
+ const portalIntervals=access.map(a=>[a.bridgeZ-1.24,a.bridgeZ+1.24]);
+ function segments(a,b){let pieces=[[a,b]];for(const [lo,hi]of portalIntervals)pieces=pieces.flatMap(([x,y])=>hi<=x||lo>=y?[[x,y]]:[[x,Math.max(x,lo)],[Math.min(y,hi),y]].filter(([l,r])=>r-l>.02));return pieces;}
+ const facadeLevels=[...levels,23.05];
+ for(let floor=0;floor<facadeLevels.length-1;floor++){
+  const bottom=facadeLevels[floor],top=facadeLevels[floor+1]-.28,height=top-bottom;
+  for(let z=-439;z<-67;z+=12)for(const [a,b]of segments(z,Math.min(-67,z+12))){
+   box('Main woven rear facade',[.16,height,b-a],[69.96,bottom+height/2,(a+b)/2],cladding);
+   if(floor>0)box('Main rear clerestory glazing',[.17,1.05,Math.max(.1,b-a-.2)],[70.06,top-.8,(a+b)/2],glass);
+  }
+  for(const a of access){
+   for(const side of [-1,1])box('Main spectator portal jamb',[.4,2.6,.18],[69.96,bottom+1.3,a.bridgeZ+side*1.24],concrete);
+   box('Main spectator portal head',[.4,.20,2.66],[69.96,bottom+2.7,a.bridgeZ],concrete);
+   if(height>2.8)box('Main portal upper screen',[.16,height-2.8,2.48],[69.96,bottom+2.8+(height-2.8)/2,a.bridgeZ],cladding);
+  }
+ }
+ // Solid end walls close the space under the raked seats without covering seat rows.
+ const section=new THREE.Shape();section.moveTo(29,.18);section.lineTo(70.1,.18);section.lineTo(70.1,23.05);section.lineTo(62.7,23.05);section.lineTo(62.7,20.5);section.lineTo(48,11.6);section.lineTo(29,.65);section.closePath();
+ const endGeometry=new THREE.ExtrudeGeometry(section,{depth:.24,bevelEnabled:false});
+ for(const z of [-439,-67.24]){const end=new THREE.Mesh(endGeometry,concrete);end.name='Main grandstand concrete end enclosure';end.position.z=z;end.castShadow=end.receiveShadow=true;root.add(end);}
+ for(let z=-433;z<-73;z+=12){
+  for(const y of [4.8,10,15.2,20])box('Main facade floor edge',[.28,.34,11.96],[70.1,y,z],metal);
+  box('Main facade vertical seam',[.24,20,.11],[70.13,10.25,z-5.95],dark);
+ }
+ root.userData={surveyed:false,detailCount:builder.finish(),accessTowers:access.length,accessRoutes:access,floorTops:levels,roofUnderside:22.95,reference:'GKD Shanghai rear facade and entrance documentation'};return root;
+}
 export function capturePitVista(scene){scene.updateMatrixWorld(true);const vista=new THREE.Group();vista.name='Shared circuit pit-straight vista';const matrix=new THREE.Matrix4(),pos=new THREE.Vector3(),bounds=new THREE.Box3();let count=0;const choose=(x,z)=>x>-25&&x<95&&z>-485&&z<-30;
  scene.traverse(o=>{if(!o.isMesh||o.isReflector||o.userData.dynamic||Array.isArray(o.material))return;if(o.isInstancedMesh){if(Object.values(o.geometry.attributes).some(a=>a.isInstancedBufferAttribute))return;const selected=[];for(let i=0;i<o.count;i++){o.getMatrixAt(i,matrix);matrix.premultiply(o.matrixWorld);pos.setFromMatrixPosition(matrix);if(choose(pos.x,pos.z))selected.push({matrix:matrix.clone(),i});}if(!selected.length)return;const copy=new THREE.InstancedMesh(o.geometry.clone(),o.material.clone(),selected.length);selected.forEach((s,j)=>{copy.setMatrixAt(j,s.matrix);if(o.instanceColor){o.getColorAt(s.i,new THREE.Color());const c=new THREE.Color();o.getColorAt(s.i,c);copy.setColorAt(j,c);}});copy.castShadow=copy.receiveShadow=true;vista.add(copy);count+=selected.length;}else{bounds.setFromObject(o);bounds.getCenter(pos);if(bounds.getSize(new THREE.Vector3()).length()>650||!choose(pos.x,pos.z))return;const copy=new THREE.Mesh(o.geometry.clone(),o.material.clone());copy.matrix.copy(o.matrixWorld);copy.matrixAutoUpdate=false;copy.castShadow=copy.receiveShadow=true;vista.add(copy);count++;}});vista.rotation.y=-Math.PI/2;vista.position.set(-255,0,45);vista.userData.detailCount=count;return vista;}

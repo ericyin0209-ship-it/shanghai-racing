@@ -33,13 +33,14 @@ vec3 finishLighting(vec2 uv,vec3 colour){
   }
   colour*=1.-clamp(occ/24.*2.2,0.,.26)*cinematicStrength*smoothstep(1.5,3.,-p.z);
  }
+ // A contiguous Gaussian footprint produces one halo instead of displaced copies.
  vec3 bloom=vec3(0.);float weight=0.;
- for(int i=0;i<12;i++){
-  float a=float(i)*2.3999632;float r=2.+float(i)*1.1;
-  vec3 sampleColor=texture2D(image,clamp(uv+vec2(cos(a),sin(a))*frameTexel*r,vec2(.001),vec2(.999))).rgb;
-  float luminance=dot(sampleColor,vec3(.2126,.7152,.0722));float w=1./(1.+r*.2);
-  bloom+=sampleColor*max(0.,luminance-1.4)/max(luminance,.001)*w;weight+=w;
+ for(int x=-2;x<=2;x++)for(int y=-2;y<=2;y++){
+  vec2 offset=vec2(float(x),float(y));float w=exp(-dot(offset,offset)*.45);
+  vec3 sampleColor=texture2D(image,clamp(uv+offset*frameTexel,vec2(.001),vec2(.999))).rgb;
+  float luminance=dot(sampleColor,vec3(.2126,.7152,.0722));
+  bloom+=sampleColor*max(0.,luminance-1.6)/max(luminance,.001)*w;weight+=w;
  }
- return colour+bloom/max(weight,.001)*.12*cinematicStrength;
+ return colour+bloom/max(weight,.001)*.10*cinematicStrength;
 }
 `;

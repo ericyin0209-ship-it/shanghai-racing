@@ -1,3 +1,4 @@
+import {createTrackLighting} from './track-lighting.js';
 import {batchStaticMeshes} from './static-batching.js';
 import {snapShadowFocus} from './shadow-focus.js';
 import {createLotusGrandstands} from './lotus-grandstands.js';
@@ -135,16 +136,14 @@ export async function createWorld(scene,renderer,track){
   const crownParts=[[-1.6,.1,0,2.9],[1.4,.7,.5,3.0],[0,2.6,-.6,2.6],[.4,-1.3,-1.5,2.6]].map(([x,y,z,r])=>{const g=new THREE.IcosahedronGeometry(r,1);g.translate(x,y,z);return g;});const crownGeometry=mergeGeometries(crownParts,false);crownParts.forEach(g=>g.dispose());const crowns=new THREE.InstancedMesh(crownGeometry,new THREE.MeshStandardMaterial({color:'#355c3b',roughness:1}),trees.length),trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.23,.35,4,5),new THREE.MeshStandardMaterial({color:'#514d3f',roughness:1}),trees.length);
   trees.forEach((p,i)=>{obj.position.set(p.x,p.h*.62,p.z);obj.scale.set(p.h/9,p.h/9,p.h/9);obj.rotation.set(0,random()*Math.PI,0);obj.updateMatrix();crowns.setMatrixAt(i,obj.matrix);crowns.setColorAt(i,new THREE.Color().setHSL(.27+random()*.08,.22,.18+random()*.14));obj.position.y=2;obj.scale.set(1,1,1);obj.updateMatrix();trunks.setMatrixAt(i,obj.matrix);});scene.add(trunks);crowns.geometry.dispose();crowns.material.dispose();createFoliage(scene,trees,random);
   // Track lighting is a simulation option; not a surveyed lighting installation.
-  const lampMat=new THREE.MeshStandardMaterial({color:'#dadfe1',emissive:'#ffe9ba',emissiveIntensity:0});
+
   const buildingGlow=[];const glowMat=new THREE.MeshStandardMaterial({color:'#ffe1a6',emissive:'#ffd39a',emissiveIntensity:0,roughness:.35});buildingGlow.push(glowMat);
   // Building fixtures are illustrative; exact installed fixtures have not been surveyed.
   for(let i=0;i<30;i++){const z=-42-i*14.4;box(.12,.08,10.5,-35.15,4.0,z,glowMat);box(.12,.16,10,-35.05,8.2,z,glowMat);}
   for(let i=0;i<19;i++)box(.2,.12,9,70,20,-75-i*19,glowMat);
   for(const z of [-455,-57]){box(100,.14,.3,0,20,z,glowMat);box(.25,1.9,31,-36,17.1,z,glowMat);box(.25,1.9,31,36,17.1,z,glowMat);}
   const architectural=new THREE.PointLight('#ffd6a0',0,95,2);architectural.position.set(-30,9,-240);scene.add(architectural);
-  const lampHeads=[],nightLights=[];
-  for(let i=0;i<48;i++){const f=track.at(i*track.length/48,i%2?24:-24);box(.15,12,.15,f.p.x,6,f.p.z,steel);const head=box(2.1,.20,.75,f.p.x,12.1,f.p.z,lampMat);lampHeads.push(head);}
-  for(let i=0;i<6;i++){const light=new THREE.PointLight('#ffe3ab',0,175,2);scene.add(light);nightLights.push(light);}
+  const trackLighting=createTrackLighting(scene,track);
   // Environment sky and actual geographic sun direction for 7 October, UTC+8 local track time.
   const sky=new Sky();sky.scale.setScalar(9000);sky.visible=false;scene.add(sky);const atmosphere=createAtmosphere(scene,hdr);
   const hemi=new THREE.HemisphereLight('#cedcf2','#52684b',1.2);scene.add(hemi);
@@ -190,15 +189,14 @@ export async function createWorld(scene,renderer,track){
     scene.fog.color.set(currentWeather==='storm'?'#758791':day>.5?'#b8c7cb':twilight>.2?'#a7a192':'#172330');
     scene.fog.density=.00010+cloudiness*cloudiness*.00045;
     exposure=1.12-twilight*.15;
-    for(const l of nightLights)l.intensity=(1-twilight)*5200;
-    lampMat.emissiveIntensity=(1-twilight)*8;architectural.intensity=(1-twilight)*2500;
+    trackLighting.setNight(1-twilight);architectural.intensity=(1-twilight)*2500;
     for(const key of ['turbidity','rayleigh','mieCoefficient','mieDirectionalG'])envSky.material.uniforms[key].value=sky.material.uniforms[key].value;
     envSky.material.uniforms.sunPosition.value.copy(sunDirection);
     const cacheKey=currentWeather+':'+currentHour;let cached=environmentCache.get(cacheKey);if(!cached){cached=currentWeather==='clear'&&currentHour>=9&&currentHour<=16?outdoorEnv:pmrem.fromScene(envScene,.04,.5,5000);if(environmentCache.size>=20){const key=environmentCache.keys().next().value,old=environmentCache.get(key);if(old!==outdoorEnv)old.dispose();environmentCache.delete(key);}environmentCache.set(cacheKey,cached);}lastEnv=cached;scene.environment=cached.texture;
     scene.environmentIntensity=.32+twilight*.50;
     return {weather,hour,solar,targetWet};
   }
-  const lightCenter=new THREE.Vector3();let lastLightPole=-1;
+  const lightCenter=new THREE.Vector3();
   function update(dt,focus){
     atmosphere.update(dt,focus);waterClock.value+=Math.max(0,dt);
     wetness+=(targetWet-wetness)*Math.min(1,dt*(targetWet>wetness?.18:.035));
@@ -207,7 +205,7 @@ export async function createWorld(scene,renderer,track){
     const intensity=currentWeather==='storm'?1:currentWeather==='rain'?.48:0;rainImpacts.update(dt,focus,wetness,intensity,waterClock.value);rain.visible=intensity>0;rainGeo.setDrawRange(0,Math.round(rainCount*2*intensity));rain.position.set(focus.x,0,focus.z);
 
     const center=lightCenter.set(focus.x,0,focus.z);snapShadowFocus(center,sunDirection,128,sun.shadow.mapSize.x,center);sun.target.position.copy(center);sun.position.copy(center).addScaledVector(sunDirection,350);
-    if(nightLights[0].intensity>0){const nearest=track.nearest(focus.x,focus.z),pole=Math.floor(nearest.s/track.length*48);if(pole!==lastLightPole){lastLightPole=pole;nightLights.forEach((light,i)=>{const index=((pole+i-2)%48+48)%48,f=track.at(index*track.length/48,index%2?24:-24);light.position.set(f.p.x,11.8,f.p.z);});}}
+    trackLighting.update(focus);
     return {wetness,rain:intensity,hour:currentHour,weather:currentWeather};
   }
   const tracksideDetails=createTracksideDetails(scene,track);createCircuitDetailUpgrade(scene,track);
@@ -220,5 +218,5 @@ export async function createWorld(scene,renderer,track){
   function resetConditions(){wetness=targetWet;track.drying.fill(0);track.dryOffsets.fill(0);track.updateWater(0,wetness);}
   function captureConditions(full=false){const state={weather:currentWeather,hour:currentHour,wetness,waterTime:waterClock.value};if(full){state.drying=track.drying.slice();state.dryOffsets=track.dryOffsets.slice();}return state;}
   function restoreConditions(state,a=state,b=a,u=0){setEnvironment(state.weather,state.hour);wetness=state.wetness;waterClock.value=state.waterTime;if(a.drying)for(let i=0;i<track.n;i++){track.drying[i]=a.drying[i]+((b.drying?.[i]??a.drying[i])-a.drying[i])*u;track.dryOffsets[i]=a.dryOffsets[i]+((b.dryOffsets?.[i]??a.dryOffsets[i])-a.dryOffsets[i])*u;}track.updateWater(0,wetness);}
-  return {pitVista,standEnvelope,architectureBatches,setEnvironment,resetConditions,captureConditions,restoreConditions,spatialStats,lifeDetail,update,sun,context,tracksideDetails,get exposure(){return exposure;},get wetness(){return wetness;},get targetWet(){return targetWet;},signalMaterials,road,asphalt,sky,architecture,rainImpacts};
+  return {pitVista,standEnvelope,trackLighting,architectureBatches,setEnvironment,resetConditions,captureConditions,restoreConditions,spatialStats,lifeDetail,update,sun,context,tracksideDetails,get exposure(){return exposure;},get wetness(){return wetness;},get targetWet(){return targetWet;},signalMaterials,road,asphalt,sky,architecture,rainImpacts};
 }

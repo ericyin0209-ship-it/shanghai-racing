@@ -1,3 +1,4 @@
+import {createAccessBuilder,accessMaterials,addLotusAccess} from './spectator-access.js';
 import * as THREE from 'three';
 
 // Silhouette and terrace construction informed by Tilke's Shanghai photographs.
@@ -23,9 +24,11 @@ export function createLotusGrandstands(scene,track,seatGeometry){
  const ribCurves=[];for(let j=0;j<24;j++){const t=j*Math.PI/12,points=[];for(let k=0;k<=12;k++){const u=k/12;points.push(new THREE.Vector3(Math.cos(t)*19.9*u,lotusHeight(u)-.08,Math.sin(t)*19.9*u));}ribCurves.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),20,.065,6,false));}
  const collar=new THREE.CylinderGeometry(.95,.75,.28,32),deck=new THREE.BoxGeometry(3.4,.28,32);
  const support=(name,frame,a,b,r=.1)=>{const from=new THREE.Vector3(...a),to=new THREE.Vector3(...b),delta=to.clone().sub(from);pose.position.copy(from).add(to).multiplyScalar(.5);pose.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.clone().normalize());pose.scale.set(r/.075,delta.length(),r/.075);pose.updateMatrix();add(name,beamGeometry,steel,new THREE.Matrix4().multiplyMatrices(frame,pose.matrix));};
+ const accessBuilder=createAccessBuilder(root),accessMaterial=accessMaterials(),accessRoutes=[];
  let seatCount=0;
  for(let canopy=0;canopy<12;canopy++){
   const f=track.at(track.length*.64+canopy*33,-48),frame=new THREE.Matrix4().makeRotationY(f.yaw);frame.setPosition(f.p.x,0,f.p.z);
+  accessRoutes.push(addLotusAccess(accessBuilder,frame,accessMaterial,canopy));
   place('Lotus tension membranes',membrane,fabric,frame,[0,14.4,0]);place('Lotus structural columns',column,steel,frame,[0,7.2,0]);
   place('Lotus circular edge members',ring,steel,frame,[0,21.5,0],[Math.PI/2,0,0]);
   place('Lotus column collars',collar,steel,frame,[0,14.28,0]);
@@ -46,5 +49,6 @@ export function createLotusGrandstands(scene,track,seatGeometry){
   support('Lotus rear handrail',frame,[-3.2,11.85,-15.5],[-3.2,11.85,15.5],.037);
  }
  for(const [name,b]of batch){const mesh=new THREE.InstancedMesh(b.geometry,b.material,b.items.length);mesh.name=name;mesh.castShadow=mesh.receiveShadow=true;b.items.forEach((item,i)=>{mesh.setMatrixAt(i,item.matrix);if(item.colour)mesh.setColorAt(i,item.colour);});root.add(mesh);}
- root.userData={surveyed:false,canopies:12,seats:seatCount,source:'Tilke 2025 Architecture Portfolio pp.32–33',instances:[...batch.values()].reduce((n,b)=>n+b.items.length,0)};return root;
+ const accessInstances=accessBuilder.finish();
+ root.userData={accessRoutes,accessBuildings:accessRoutes.length,accessInstances,surveyed:false,canopies:12,seats:seatCount,source:'Tilke 2025 Architecture Portfolio pp.32–33',instances:[...batch.values()].reduce((n,b)=>n+b.items.length,0)};return root;
 }

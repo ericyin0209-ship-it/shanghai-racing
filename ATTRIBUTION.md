@@ -94,3 +94,9 @@ Procedural estimated service/pavement detailing was informed by FIA 2025 Chinese
 
 ## Local weather
 Weather data: [Open-Meteo](https://open-meteo.com/), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Regional coordinates are requested only with player permission; no coordinates are persisted in the game archive.
+
+## AMR23 assembly reference review
+Photographic reference: [Formula 1 official AMR23 launch gallery](https://www.formula1.com/en/latest/article/gallery-check-out-every-angle-of-aston-martins-2023-f1-car-and-livery.1uEMgsasHptZMPm4fsFd7P) and [F1 technical analysis](https://www.formula1.com/en/latest/article/tech-analysis-unpacking-the-aggressive-new-aston-martin-amr23.2CNfWh0iTNGMAdp3xtgqwx). Photographs are references only and are not bundled. Assembly corrections retain the original supplied GLB and do not constitute a surveyed or factory-CAD replica.
+
+## Grandstand rear access and lighting repair
+Rear and side metallic-mesh cladding and spectator entrances are documented in [GKD Shanghai International Circuit project report](https://www.impetus-pr.de/fileadmin/media/Pressetexte/GKD/Englische_Texte/GKD_Shanghai_International_Circuit.pdf). Public access routes and stairway entrances are also shown in the [Shanghai government circuit event map](https://english.shanghai.gov.cn/assets/Download/Shanghai%20International%20Circuit%20Map.pdf). New rear concourses, switchback stairs, landings, railings and facade modules are original procedural geometry informed by those documents. Their dimensions and placement are estimated, not surveyed as-built CAD. Reference photographs/documents are not redistributed. Each road pole now has one downward-facing luminous lens; bloom uses a contiguous Gaussian kernel to prevent separated replicas of small highlights.
