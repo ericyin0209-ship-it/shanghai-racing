@@ -1,0 +1,29 @@
+[
+  {
+    "file": "turkish-2021.mp4",
+    "title": "Formula 1 Turkish GP 2021 - 2.ogg",
+    "author": "SAİT71",
+    "source": "https://commons.wikimedia.org/wiki/File:Formula_1_Turkish_GP_2021_-_2.ogg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "640×360 H.264 转码、去除声音；画面未冒充上海比赛；派生文件保留 CC BY-SA 4.0。"
+  },
+  {
+    "file": "turkish-2021-long.mp4",
+    "title": "Formula 1 Turkish GP 2021.ogg",
+    "author": "SAİT71",
+    "source": "https://commons.wikimedia.org/wiki/File:Formula_1_Turkish_GP_2021.ogg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "640×360 H.264 转码、去除声音，派生文件保留 CC BY-SA 4.0。"
+  },
+  {
+    "file": "dutch-1963.mp4",
+    "title": "1963 Dutch Grand Prix.ogv",
+    "author": "Polygoon Hollands Nieuws / Open Images",
+    "source": "https://commons.wikimedia.org/wiki/File:1963_Dutch_Grand_Prix.ogv",
+    "license": "CC BY-SA 3.0 NL",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/nl/deed.en",
+    "changes": "640×360 H.264 转码、保留原画幅增加黑边、去除声音；派生文件保留 CC BY-SA 3.0 NL。"
+  }
+]

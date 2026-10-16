@@ -1,0 +1,10 @@
+import * as THREE from 'three';
+export function createFoliage(scene,trees,random){
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=512;const c=canvas.getContext('2d');c.clearRect(0,0,512,512);
+ for(let i=0;i<30;i++){const x=60+random()*392,y=60+random()*392,a=random()*Math.PI;c.save();c.translate(x,y);c.rotate(a);const grad=c.createLinearGradient(-34,0,34,0);grad.addColorStop(0,'#315139');grad.addColorStop(.48,'#82935b');grad.addColorStop(1,'#465e36');c.fillStyle=grad;c.beginPath();c.ellipse(0,0,38,15,0,0,Math.PI*2);c.fill();c.strokeStyle='#91a77a';c.lineWidth=1.4;c.beginPath();c.moveTo(-35,0);c.lineTo(34,0);c.stroke();for(let k=-24;k<=24;k+=8){c.beginPath();c.moveTo(k,0);c.lineTo(k+7,10);c.moveTo(k,0);c.lineTo(k+7,-10);c.stroke();}c.restore();}
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=8;
+ const material=new THREE.MeshStandardMaterial({map:tex,alphaTest:.38,side:THREE.DoubleSide,roughness:.95,color:'#bcc8a1'}),per=180,leaves=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.7,1.7),material,trees.length*per),d=new THREE.Object3D();leaves.castShadow=leaves.receiveShadow=true;
+ const branches=new THREE.InstancedMesh(new THREE.CylinderGeometry(.055,.11,2,10),new THREE.MeshStandardMaterial({color:'#565147',roughness:.97}),trees.length*7);branches.castShadow=true;
+ for(let t=0;t<trees.length;t++){const p=trees[t];for(let j=0;j<per;j++){const a=random()*Math.PI*2,z=2*random()-1,r=Math.cbrt(random())*p.h*.30,xy=Math.sqrt(1-z*z);d.position.set(p.x+Math.cos(a)*xy*r,p.h*.68+z*r*.85,p.z+Math.sin(a)*xy*r);d.rotation.set(random()*Math.PI,random()*Math.PI*2,random()*Math.PI);d.scale.setScalar(.8+random()*.65);d.updateMatrix();const id=t*per+j;leaves.setMatrixAt(id,d.matrix);leaves.setColorAt(id,new THREE.Color().setHSL(.24+random()*.08,.18,.45+random()*.18));}for(let j=0;j<7;j++){const a=j*Math.PI*2/7;d.position.set(p.x+Math.cos(a)*.6,p.h*.45+j*.18,p.z+Math.sin(a)*.6);d.rotation.set(Math.cos(a)*.55,0,Math.sin(a)*.55);d.scale.set(1,p.h*.15,1);d.updateMatrix();branches.setMatrixAt(t*7+j,d.matrix);}}
+ scene.add(leaves,branches);return leaves;
+}

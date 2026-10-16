@@ -1,0 +1,94 @@
+/* Keep the single-car lobby usable when browser chrome reduces available height. */
+body.inspect-track:not(.driving) .car-selector { display:none; }
+body.material-view:not(.driving) #trackcard { display:none; }
+#replay-bar {
+  display:grid; grid-template-columns:auto auto minmax(100px,1fr) auto auto;
+  gap:14px; padding:12px 16px; border-radius:6px;
+  border:1px solid #acc9c430; background:#0b1b20ed;
+  box-shadow:0 10px 35px #0005; backdrop-filter:blur(18px);
+}
+#replay-bar>span { font:8px sans-serif; letter-spacing:.16em; color:#8eafa6; }
+#replay-bar>input { width:100%; min-width:0; margin:0; }
+#replay-bar>output { font:10px monospace; white-space:nowrap; color:#b6cfc4; }
+#replay-bar button { font:10px sans-serif; white-space:nowrap; border-radius:3px; }
+body.driving.replay-mode { --trackcard-bottom:110px; }
+body.driving.replay-mode .telemetry { bottom:110px!important; }
+@media (max-width:600px) {
+  #replay-bar { grid-template-columns:auto minmax(60px,1fr) auto; gap:9px; }
+  #replay-bar>span { grid-column:1/-1; }
+  #replay-play { grid-column:1; grid-row:2; }
+  #replay-seek { grid-column:2; grid-row:2; }
+  #replay-exit { grid-column:3; grid-row:2; }
+  #replay-time { grid-column:1/-1; grid-row:3; text-align:center; }
+  body.driving.replay-mode { --trackcard-bottom:150px; }
+  body.driving.replay-mode .telemetry { bottom:150px!important; }
+}
+@media (max-height:600px) and (min-width:601px) {
+  body:not(.driving) #trackcard,
+  body:not(.driving) .car-selector,
+  body:not(.driving) .viewer-hint { display:none; }
+  body:not(.driving) .session-panel {
+    top:12px; right:20px; bottom:14px; width:260px;
+    height:auto; max-height:none; padding:12px 14px;
+    overflow-y:auto; overscroll-behavior:contain;
+    scrollbar-color:#678e7f #101c20;
+  }
+  body:not(.driving) .view-tabs {
+    top:12px; left:20px; right:300px; width:auto;
+    max-width:none; overflow-x:auto; scrollbar-width:thin;
+  }
+  body:not(.driving) .view-tabs button {
+    flex:0 0 auto; padding:10px 12px; white-space:nowrap;
+  }
+  body:not(.driving) .model-info {
+    top:auto; bottom:20px; left:24px; width:235px;
+    text-shadow:0 2px 14px #000;
+  }
+  body:not(.driving) .model-info h1 {
+    font-size:24px; line-height:1.15; margin:9px 0 0;
+  }
+  body:not(.driving) .settings { margin:10px 0; gap:8px; }
+  body:not(.driving) .session-panel .start-row { position:sticky; bottom:-12px; padding:7px 0; background:#101d20; z-index:1; }
+  body:not(.driving) .studio-actions { margin-top:6px; }
+}
+@media (max-width:600px) {
+  header { padding:12px; height:86px; }
+  .brand { gap:4px; font-size:12px; letter-spacing:2px; }
+  .brand-mark { width:31px; font-size:22px; }
+  .brand span:not(.brand-mark) { font-size:5px; letter-spacing:.8px; }
+  .header-actions { gap:5px; flex-shrink:0; }
+  .header-actions button { white-space:nowrap; padding:8px 6px; min-width:30px; font-size:9px; }
+  .language-control select { width:64px; padding:8px 18px 8px 7px; font-size:10px; }
+  body:not(.driving) .car-selector,
+  body:not(.driving) #trackcard,
+  body:not(.driving) .viewer-hint { display:none; }
+  body:not(.driving) #garage { inset:86px 0 0; }
+  body:not(.driving) .view-tabs {
+    top:10px; left:12px; right:12px; width:auto;
+    max-width:none; overflow-x:auto; scrollbar-width:thin;
+  }
+  body:not(.driving) .view-tabs button { flex:0 0 auto; white-space:nowrap; padding:11px 14px; }
+  body:not(.driving) .model-info { top:67px; left:18px; width:200px; }
+  body:not(.driving) .model-info h1 { font-size:23px; line-height:1.12; margin:8px 0; }
+  body:not(.driving) .session-panel {
+    top:auto; bottom:14px; left:12px; right:12px; width:auto;
+    max-height:42dvh; padding:13px 15px;
+    overflow-y:auto; overscroll-behavior:contain;
+  }
+  body:not(.driving) .track-title { display:none; }
+  body:not(.driving) .panel-heading { padding-bottom:8px; }
+  body:not(.driving) .settings { margin:10px 0; gap:8px; }
+  body:not(.driving) .session-panel .start-row { position:sticky; bottom:-13px; padding:7px 0; background:#101d20; z-index:1; }
+  body:not(.driving) .studio-actions { margin-top:6px; }
+}
+/* Short displays need the touch controls in the clear space between both instruments. */
+@media (max-height:500px) and (min-width:601px) {
+  body.driving .touch-controls {
+    bottom:16px!important; left:220px; right:190px;
+    justify-content:center; gap:12px;
+  }
+  body.driving .touch-controls button { width:46px; height:42px; }
+  body.driving .telemetry .temps { display:none; }
+  body.driving .telemetry { width:190px; }
+  body.driving .lap-panel { width:206px; }
+}

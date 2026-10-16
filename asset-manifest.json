@@ -1,0 +1,203 @@
+{
+  "version": "2.0.0-preview.1",
+  "cars": [
+    {
+      "id": "green",
+      "name": "Aston Martin AMR23",
+      "asset": "assets/models/amr23-v2.glb",
+      "sha256": "e778079f7952e6779d65735d7d9517474fb7ae433c0605a9bf0b5162555e802a",
+      "bytes": 73431168,
+      "supplied_by": "user",
+      "modifications": "Runtime metres-preserving orientation, motion groups, static merging, export material adaptation; original GLB unchanged"
+    }
+  ],
+  "environment_sources": [
+    "Poly Haven CC0",
+    "OpenStreetMap ODbL 1.0",
+    "bacinger/f1-circuits"
+  ],
+  "wind_tunnel": {
+    "reference": "https://www.windshearinc.com/",
+    "units": "metres",
+    "test_section": [
+      14.5,
+      5.5,
+      3
+    ],
+    "plenum": [
+      20.6,
+      14.3,
+      8.2
+    ],
+    "belt": [
+      3.2,
+      9
+    ],
+    "status": "NASA open-return suction layout; Windshear published envelope dimensions as scale reference only; custom machine bay, analytic obstacle-aware smoke, not CFD.",
+    "particles": 11040
+  },
+  "helmet": {
+    "reference": "https://www.us.bellracing.com/p/hp77/",
+    "status": "Narrow screen mask inspired by HP77; fictional green visor assist; no hands.",
+    "rain": "GPU height-field refraction of current frame, pinned droplets, coalescence and runoff trails; screen-space approximation"
+  },
+  "environment_updates": {
+    "mappedBuildings": 203,
+    "adBoards": 1623,
+    "geometry": "OSM footprints; photo-informed pit and grandstand details; other fixtures and ad positions approximate",
+    "reference": "https://www.astonmartinf1.com/en-GB/news/feature/the-secrets-to-a-fast-lap-at-shanghai-international-circuit"
+  },
+  "latestUpdates": {
+    "dynamics": "Nonlinear front/rear tyre approximation, load transfer, suspension appearance, correct fixed wheel deflectors",
+    "cockpit": "Photograph-informed AMR23 wheel; adjustable driver eye; manual gears, pit limiter and brake balance",
+    "rain": "Live visor refraction and runoff, full-circuit planar wet reflection, tyre spray",
+    "aerodynamics": "139 bounding-shape obstacles from user mesh components; 6 inspection regions, not CFD",
+    "architecture": "FIA/Tilke-informed detail and gravel extents, partly estimated"
+  },
+  "audioSources": [
+    {
+      "file": "f1-v6.m4a",
+      "author": "SAİT71",
+      "title": "Formula 1 Turkish GP 2021 - 2.ogg",
+      "source": "https://commons.wikimedia.org/wiki/File:Formula_1_Turkish_GP_2021_-_2.ogg",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "scope": "真实 2021 F1 赛场录音；混合车辆，不是 AMR23 专用车内录音。",
+      "changes": "抽取音轨、转单声道、滤波和 AAC 转码；运行时截段、循环交叉淡化、调速、滤波和换挡短片段。派生音频按 CC BY-SA 4.0 提供。",
+      "sha256": "bfec0eb6a8e6d8555bb7e6de7b2193fe4cd5716a62c39ac5e6f4fb6dbf90c17b"
+    },
+    {
+      "file": "tyre-brake.m4a",
+      "author": "milkotz",
+      "title": "CAR BRAKING.mp3",
+      "source": "https://freesound.org/people/milkotz/sounds/613739/",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "scope": "作者标注汽车制动，未确认车型；不是 F1 制动系统实测。",
+      "changes": "下载公开 HQ 预览、转单声道、滤波和 AAC 转码；运行时循环截取，按滑移和高速制动调节。",
+      "sha256": "346b366b37e208793e6ae2e910c2fcf4c1b1e9ed5391651505c2ba5946efa4b6"
+    },
+    {
+      "file": "gravel-brake.m4a",
+      "author": "Pól",
+      "title": "S016_Brake_Gravel_Mono.wav",
+      "source": "https://freesound.org/people/P%C3%B3l/sounds/385934/",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "scope": "拉力赛车在砂石面制动录音，作为越出路面的砂石层。",
+      "changes": "下载公开 HQ 预览、滤波和 AAC 转码；运行时交叉淡化循环。",
+      "sha256": "f1e90b667b3dbaddc2916e236b0a37a4b9a813a225a43599d2988b75ac97018c"
+    }
+  ],
+  "languages": [
+    "zh-CN",
+    "en",
+    "fr",
+    "ja",
+    "ko"
+  ],
+  "sessionIntro": {
+    "durationSeconds": 7.2,
+    "realtimeModel": true,
+    "skip": true
+  },
+  "windTunnelSmoke": {
+    "reference": "First green-car segment of user supplied recording",
+    "rendering": "Ray-marched three-dimensional density volume",
+    "densityGrid": [
+      128,
+      64,
+      256
+    ],
+    "raySteps": 120,
+    "lightOcclusionSteps": 6,
+    "sceneDepthOcclusion": true,
+    "animatedMultiscaleTurbulence": true,
+    "wheelCurlAndWake": true,
+    "concentrationRange": [
+      0.2,
+      1.5
+    ],
+    "visualMotionSpeedScale": 0.18,
+    "componentBoundaryCount": 139,
+    "referenceMatch": "Visual approximation; not identical to video and not a CFD solution"
+  },
+  "garageLogo": {
+    "wallMounted": true,
+    "position": [
+      0,
+      2.8,
+      -5.34
+    ],
+    "followsCamera": false
+  },
+  "cockpitHeadMotion": {
+    "interpolatedYawRate": true,
+    "criticalDamping": true,
+    "turnFrequency": 18,
+    "leanFrequency": 15
+  },
+  "pitGarage": {
+    "independentScene": true,
+    "glassFront": "one left hinged entrance; remaining fixed glazing",
+    "weatherLinked": true,
+    "interiorCameraBounds": true,
+    "equipment": [
+      "drawer tool cabinets",
+      "wheel rack",
+      "nitrogen trolley",
+      "pressure gauges",
+      "floor jacks"
+    ],
+    "reference": "Atmospheric pit interior; not a measured reconstruction of a specific Shanghai garage",
+    "roomMetres": [
+      14,
+      16.5,
+      4.6
+    ],
+    "spareTyreDiameterMetres": 0.7198,
+    "benchHeightMetres": 1.1,
+    "nitrogenTrolleyHeightMetres": 1.9,
+    "planarReflections": [
+      "fixed glazing",
+      "wet pit apron"
+    ],
+    "carEnvironment": "PMREM capture of actual room, car excluded",
+    "rainGlass": "individual impacts, coalescence, gravity runoff, normal distortion and highlights",
+    "topLuminaires": 8,
+    "outdoorDetail": "1080 instanced seats plus backs, tiered grandstand, swept canopy, curved media volumes, railings and drains",
+    "referenceLinks": [
+      "https://www.audif1.com/en/news/2026/chinese-grand-prix-galleries",
+      "https://www.formula1.com/en/latest/article/why-we-love-the-chinese-grand-prix.3AqunaR9kFuH2D2dWG8wqJ"
+    ]
+  },
+  "patchFixes": {
+    "version": "1.0.1",
+    "launch": "Joint longitudinal/lateral force limiting and rate-limited accelerator",
+    "reset": "Per-wheel road reinitialization and complete motion reset; pit cancellation releases automatic limiter",
+    "weather": "New-session surface wetness initialized from selected conditions",
+    "telemetry": "20 Hz recording in fixed-step physics",
+    "replay": "Restore driving state before setup, pit, telemetry or photo actions",
+    "photo": "Restore camera and controls on exit",
+    "export": "Visible CSV/PNG preview and manual download link",
+    "mobile": "Touch controls below speed display",
+    "pitSurface": "Shared pit lane boundaries for road surface, offroad and barrier classification"
+  },
+  "serviceEquipment200": {
+    "asset": "assets/models/service-equipment.glb",
+    "bytes": 7868132,
+    "sha256": "2216ebaa1482608aab2fd27486143dcab23eb9242f9ebae3bca67f1dc87c4723",
+    "parts": 694,
+    "triangles": 227880,
+    "authorship": "Original procedural service equipment, metre scale"
+  },
+  "upgrade200": {
+    "status": "development; acceptance incomplete",
+    "carOriginalUnchanged": true,
+    "tyres": "Runtime authored intermediate/full-wet tread geometries; Pirelli colour conventions; not scanned tyre geometry",
+    "architecture": "Photo-informed lotus canopies and terraces, open pit bays; approximate dimensions",
+    "shadows": "Texel-stabilised directional grid, restricted depth range; local contact occlusion and HDR highlights",
+    "physics": "Per-contact traction budgeting, contact relaxation, independent tyre/brake thermal masses, directional barrier response; not real AMR23 calibration"
+  },
+  "release_channel": "web-preview"
+}

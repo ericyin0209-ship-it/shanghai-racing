@@ -1,0 +1,35 @@
+[
+  {
+    "file": "f1-v6.m4a",
+    "author": "SAİT71",
+    "title": "Formula 1 Turkish GP 2021 - 2.ogg",
+    "source": "https://commons.wikimedia.org/wiki/File:Formula_1_Turkish_GP_2021_-_2.ogg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "scope": "真实 2021 F1 赛场录音；混合车辆，不是 AMR23 专用车内录音。",
+    "changes": "抽取音轨、转单声道、滤波和 AAC 转码；运行时截段、循环交叉淡化、调速、滤波和换挡短片段。派生音频按 CC BY-SA 4.0 提供。",
+    "sha256": "bfec0eb6a8e6d8555bb7e6de7b2193fe4cd5716a62c39ac5e6f4fb6dbf90c17b"
+  },
+  {
+    "file": "tyre-brake.m4a",
+    "author": "milkotz",
+    "title": "CAR BRAKING.mp3",
+    "source": "https://freesound.org/people/milkotz/sounds/613739/",
+    "license": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "scope": "作者标注汽车制动，未确认车型；不是 F1 制动系统实测。",
+    "changes": "下载公开 HQ 预览、转单声道、滤波和 AAC 转码；运行时循环截取，按滑移和高速制动调节。",
+    "sha256": "346b366b37e208793e6ae2e910c2fcf4c1b1e9ed5391651505c2ba5946efa4b6"
+  },
+  {
+    "file": "gravel-brake.m4a",
+    "author": "Pól",
+    "title": "S016_Brake_Gravel_Mono.wav",
+    "source": "https://freesound.org/people/P%C3%B3l/sounds/385934/",
+    "license": "CC0 1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "scope": "拉力赛车在砂石面制动录音，作为越出路面的砂石层。",
+    "changes": "下载公开 HQ 预览、滤波和 AAC 转码；运行时交叉淡化循环。",
+    "sha256": "f1e90b667b3dbaddc2916e236b0a37a4b9a813a225a43599d2988b75ac97018c"
+  }
+]

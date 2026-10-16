@@ -1,0 +1,85 @@
+import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
+import {createRainImpacts} from './rain-impact.js';
+import {createGarageRain,gradeWetApron} from './rain-grade.js';
+import {createSpareWheel} from './car.js';
+import * as THREE from 'three';
+import {addGarageDetails} from './garage-detail.js';
+import {createGarageReflector,isolateGarageReflectors} from './garage-reflections.js';
+import {createGlassWater} from './glass-water.js';
+import {RectAreaLightUniformsLib} from './vendor/RectAreaLightUniformsLib.js';
+// A self-contained pit interior and a small weather courtyard, independent of the circuit scene.
+export function createPitGarage(scene){
+ RectAreaLightUniformsLib.init();
+ const group=new THREE.Group();group.name='Shanghai pit garage / independent atmosphere';scene.add(group);
+ const mat=(color,metalness=.35,roughness=.45)=>new THREE.MeshStandardMaterial({color,metalness,roughness});
+ const aluminium=mat('#9ca5a7',.85,.25),dark=mat('#172c2c',.55,.35),rubber=mat('#14181a',.03,.86),wall=mat('#465353',.15,.7),white=mat('#cbd5d3',.25,.6),black=mat('#172021',.6,.42);
+ const lightMat=new THREE.MeshBasicMaterial({color:new THREE.Color(3.0,3.4,3.15),toneMapped:false});
+ const water=createGlassWater(),reflectors=[];const emissiveFixtures=[];
+ function box(parent,x,y,z,w,h,d,m){const o=new THREE.Mesh((()=>{const r=Math.min(.025,w*.12,h*.12,d*.12);if(Math.min(w,h,d)<.08||Math.max(w,h,d)>3)return new THREE.BoxGeometry(w,h,d);return new RoundedBoxGeometry(w,h,d,3,r);})(),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
+ function cylinder(parent,x,y,z,r,h,m,axis='y',r2=r){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2,h,24),m);o.position.set(x,y,z);if(axis==='z')o.rotation.x=Math.PI/2;if(axis==='x')o.rotation.z=Math.PI/2;o.castShadow=true;parent.add(o);return o;}
+ function tube(parent,points,r,m){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));const o=new THREE.Mesh(new THREE.TubeGeometry(curve,40,r,8,false),m);parent.add(o);return o;}
+ // A 14 m wide team suite, with 4.6 m headroom. Equipment dimensions are independent of room geometry.
+ for(const x of [-7,7]){box(group,x,2.3,2.6,.16,4.6,16,wall);for(let z=-5;z<11;z+=1.25){box(group,x*.988,2.3,z,.022,4.5,.018,black);}box(group,x*.98,.12,2.6,.06,.24,16,aluminium);box(group,x*.975,3.8,2.6,.08,.08,16,aluminium);}
+ box(group,0,4.65,2.6,14,.18,16.7,mat('#323d40',.18,.65));
+ for(const z of [-3,1,5,9]){box(group,0,4.48,z,14,.12,.10,black);for(const x of [-3.5,3.5]){box(group,x,4.35,z,2.85,.11,.38,black);const lens=box(group,x,4.275,z,2.7,.032,.30,lightMat);lens.castShadow=false;emissiveFixtures.push(lens);for(let i=-12;i<=12;i++)box(group,x+i*.1,4.252,z,.009,.014,.29,white);}}
+ // Recessed wall washers illuminate the logo and give bodywork visible highlight gradients.
+ for(const x of [-6.75,6.75])for(const z of [-2,4,8]){box(group,x,3.7,z,.045,.45,.8,black);const panel=box(group,x*.992,3.7,z,.02,.35,.7,lightMat);panel.castShadow=false;}
+ for(const x of [-4.8,4.8])box(group,x,.009,2.3,.021,.01,13,mat('#b9c0b6',.25,.5));
+ // Left hinged entrance only; the remaining frontage is fixed floor-to-ceiling glazing.
+ box(group,0,4.25,10.95,14,.68,.32,dark);box(group,0,.055,10.75,14,.11,.10,aluminium);
+ const glass=new THREE.MeshPhysicalMaterial({color:'#dce9e8',metalness:0,roughness:.025,ior:1.52,transparent:true,opacity:.065,clearcoat:1,clearcoatRoughness:.03,side:THREE.DoubleSide,depthWrite:false,normalMap:water.texture,normalScale:new THREE.Vector2(.8,.8)});
+ const pane=new THREE.Mesh(new THREE.PlaneGeometry(14,3.94),glass);pane.position.set(0,2.02,10.8);pane.renderOrder=1;group.add(pane);
+ for(const x of [-7,-5.35,-1.24,2.88,7]){box(group,x,2.02,10.76,.045,4.03,.065,aluminium);box(group,x,2.02,10.74,.014,4.02,.012,rubber);}
+ box(group,0,3.98,10.76,14,.045,.065,aluminium);
+ // Door closer, hinge barrels, latch and pull handle occur only on the left entrance.
+ for(const y of [.32,1.75,3.55])cylinder(group,-6.98,y,10.67,.028,.13,aluminium);
+ box(group,-6.2,3.88,10.61,.38,.055,.08,aluminium);tube(group,[[-6.15,3.85,10.6],[-5.92,3.8,10.52],[-5.7,3.86,10.61]],.012,aluminium);
+ for(const y of [1.05,1.60])box(group,-5.53,y,10.64,.032,.035,.10,aluminium);box(group,-5.53,1.325,10.59,.038,.62,.038,aluminium);
+ for(let x=-6.8;x<7;x+=.4)box(group,x,1.10,10.775,.15,.013,.008,white);
+ const glazingReflection=createGarageReflector(new THREE.PlaneGeometry(14,3.94));glazingReflection.position.set(0,2.02,10.70);glazingReflection.rotation.y=Math.PI;glazingReflection.material.uniforms.waterMap.value=water.texture;reflectors.push(glazingReflection);group.add(glazingReflection);
+ const labelCanvas=document.createElement('canvas');labelCanvas.width=1536;labelCanvas.height=128;const lc=labelCanvas.getContext('2d');lc.fillStyle='#a8b7b4';lc.font='500 44px sans-serif';lc.textAlign='center';lc.fillText('SHANGHAI INTERNATIONAL CIRCUIT  /  PIT GARAGE',768,80);const labelTex=new THREE.CanvasTexture(labelCanvas);labelTex.colorSpace=THREE.SRGBColorSpace;const label=new THREE.Mesh(new THREE.PlaneGeometry(9,.6),new THREE.MeshBasicMaterial({map:labelTex,transparent:true,side:THREE.DoubleSide}));label.rotation.y=Math.PI;label.position.set(0,4.27,10.7);group.add(label);
+ // Detailed mechanic stations set against the side walls, with drawers, locks and individual caster assemblies.
+ function caster(parent,x,z){box(parent,x,.22,z,.1,.19,.09,aluminium);cylinder(parent,x,.12,z,.11,.07,rubber,'x');cylinder(parent,x+.04,.12,z,.032,.01,aluminium,'x');}
+ for(const side of [-1,1]){const station=new THREE.Group();station.position.set(side*5.98,0,-1.6);station.scale.setScalar(.68);station.name='1.10 m mechanic workstation';group.add(station);box(station,0,.87,0,1.65,1.3,2.7,dark);box(station,0,1.56,0,1.8,.12,2.85,aluminium);for(const x of [-.63,.63])for(const z of [-1.1,1.1])caster(station,x,z);const face=-side*.84;for(let i=0;i<6;i++){box(station,face,.43+i*.17,0,.025,.14,2.5,black);box(station,face-side*.03,.48+i*.17,0,.06,.025,2.1,aluminium);}cylinder(station,face-side*.03,1.4,1,.035,.025,aluminium,'x');box(station,0,2.3,-1.31,1.65,1.3,.055,black);for(let row=0;row<6;row++)for(let col=0;col<9;col++){cylinder(station,-.7+col*.17,1.8+row*.19,-1.27,.012,.012,aluminium,'z');}for(let i=0;i<5;i++){box(station,-.53+i*.26,2.28,-1.2,.045,.42,.04,aluminium);const head=new THREE.Mesh(new THREE.TorusGeometry(.052,.012,8,24),aluminium);head.position.set(-.53+i*.26,2.48,-1.2);station.add(head);}box(station,.1,1.67,.2,.65,.12,.5,black);for(let i=0;i<4;i++)cylinder(station,-.5+i*.12,1.66,.65,.036,.16,aluminium);}
+ // Wheel rack: slick tyres, centre-lock rims, support shelves and retaining stops.
+ const rack=new THREE.Group();rack.position.set(-6.12,0,5.7);rack.scale.setScalar(.61);rack.name='0.72 m spare wheel rack';group.add(rack);
+ for(const x of [-.8,.8])for(const z of [-1.55,1.55])box(rack,x,1.6,z,.06,3.2,.06,aluminium);
+ for(const y of [.42,1.75,3.1]){box(rack,0,y,0,1.7,.06,3.2,black);for(const z of [-1.57,1.57])box(rack,0,y+.16,z,1.7,.04,.04,aluminium);}
+ for(const y of [1.04,2.37])for(const z of [-.8,.8]){const wheel=createSpareWheel(z<0?'front':'rear');wheel.scale.setScalar(1/.61);wheel.position.set(0,y,z);rack.add(wheel);}
+ // Nitrogen trolley, regulators, pressure gauges, hose reel and low-profile jacks.
+ const cart=new THREE.Group();cart.position.set(6.05,0,5.4);cart.scale.setScalar(.78);cart.name='1.90 m nitrogen trolley';group.add(cart);box(cart,0,.24,0,1.15,.08,1.65,aluminium);for(const x of [-.45,.45])for(const z of [-.6,.6])caster(cart,x,z);for(const z of [-.42,.42]){cylinder(cart,0,1.15,z,.24,1.7,dark);const cap=new THREE.Mesh(new THREE.SphereGeometry(.24,24,12),dark);cap.scale.y=.6;cap.position.set(0,2,z);cart.add(cap);cylinder(cart,0,2.25,z,.055,.18,aluminium);box(cart,.12,2.28,z,.23,.07,.08,aluminium);cylinder(cart,.28,2.38,z,.105,.045,aluminium,'x');cylinder(cart,.308,2.38,z,.085,.006,white,'x');const needle=box(cart,.314,2.39,z,.007,.006,.13,black);needle.rotation.x=.65;for(let a=0;a<12;a++){const theta=a*Math.PI/6;const tick=box(cart,.318,2.38+Math.sin(theta)*.066,z+Math.cos(theta)*.066,.003,.014,.004,black);tick.rotation.x=-theta;}cylinder(cart,.321,2.38,z,.012,.004,dark,'x');}tube(cart,[[-.5,.4,-.75],[-.5,2.4,-.75],[.5,2.4,-.75],[.5,.4,-.75]],.025,aluminium);tube(cart,[[.2,2.2,.4],[.6,1.7,.8],[.8,.18,1.1],[.3,.06,1.55],[-.5,.04,1.3]],.022,rubber);
+ for(const x of [-4.6,4.6]){const jack=new THREE.Group();jack.position.set(x,0,-3.8);jack.scale.setScalar(.78);group.add(jack);box(jack,0,.16,0,.7,.12,1.2,aluminium);for(const sx of [-.34,.34])for(const z of [-.45,.45])cylinder(jack,sx,.13,z,.1,.07,rubber,'x');tube(jack,[[0,.22,.4],[0,.5,1],[0,1.7,1.4]],.032,aluminium);box(jack,0,.36,-.3,.45,.1,.3,dark);box(jack,0,1.75,1.4,.52,.035,.04,rubber);}
+ addGarageDetails(group);
+ // Outdoor atmosphere only: a short apron and simplified opposite pit structures, no racing circuit model.
+ const apronMat=mat('#657173',.18,.65);const gradeApron=gradeWetApron(apronMat);const apron=box(group,0,-.07,120,1400,.12,220,apronMat);apron.castShadow=false;
+ for(const x of [-8,-4,0,4,8])box(group,x,.003,19,.075,.01,10,white);
+ for(const x of [-11,11]){box(group,x,.17,12,.18,.34,2,aluminium);for(let z=11.1;z<13;z+=.14)box(group,x,.36,z,.24,.012,.055,black);}
+ const outsideFacade=mat('#bfc5bf',.15,.64),outsideWindows=mat('#294552',.6,.20);
+ // Pit apron: expansion joints, service drainage, tactile entrance mat and painted working boxes.
+ for(let z=12;z<32;z+=2.5)box(group,0,-.001,z,24,.008,.015,black);
+ for(const x of [-6.8,6.8]){box(group,x,.025,11.45,.32,.045,1.1,black);for(let z=11;z<12;z+=.07)box(group,x,.052,z,.29,.012,.025,aluminium);}
+ box(group,-6.17,.018,10.0,1.45,.026,.75,rubber);for(let x=-6.8;x<-5.5;x+=.065)box(group,x,.035,10.0,.016,.007,.69,black);
+ const seatMat=outsideFacade;const roof={material:outsideFacade};
+ const wetReflection=createGarageReflector(new THREE.PlaneGeometry(24,22),{wet:true,width:768,height:384});wetReflection.rotation.x=-Math.PI/2;wetReflection.position.set(0,.006,22.0);group.add(wetReflection);reflectors.push(wetReflection);
+ const waterHighlights=new THREE.Mesh(new THREE.PlaneGeometry(14,3.94),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{waterMap:{value:water.texture},rain:{value:0}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D waterMap;uniform float rain;varying vec2 vUv;void main(){vec2 n=texture2D(waterMap,vUv).rg*2.-1.;float m=length(n);float rim=smoothstep(.15,.65,m);float sparkle=pow(max(0.,dot(normalize(vec3(n,.6)),normalize(vec3(-.4,.8,.45)))),12.);vec3 color=mix(vec3(.04,.08,.09),vec3(.85,.98,1.),sparkle);gl_FragColor=vec4(color,rain*rim*(.14+sparkle*.65));}'}));waterHighlights.position.set(0,2.02,10.67);waterHighlights.renderOrder=3;group.add(waterHighlights);
+ isolateGarageReflectors(reflectors,[pane,waterHighlights]);
+ // Procedural cloud billows on the panorama, generated only when selections change.
+ const skyCanvas=document.createElement('canvas');skyCanvas.width=2048;skyCanvas.height=1024;const ctx=skyCanvas.getContext('2d'),skyTex=new THREE.CanvasTexture(skyCanvas);skyTex.colorSpace=THREE.SRGBColorSpace;
+ const skyMaterial=new THREE.MeshBasicMaterial({map:skyTex,side:THREE.BackSide,toneMapped:false});const sky=new THREE.Mesh(new THREE.SphereGeometry(1600,64,32),skyMaterial);sky.position.set(0,0,0);group.add(sky);
+ const outsideLight=new THREE.DirectionalLight('#d7edff',1.1);outsideLight.position.set(-3,8,15);outsideLight.target.position.set(0,0,4);scene.add(outsideLight,outsideLight.target);
+ // Match light-emitting surfaces to the actual ceiling lenses. Area lights
+ // produce broad, moving paint highlights rather than point-source hot spots.
+ const roomLights=[];for(const z of [-3,1,5,9])for(const x of [-3.5,3.5]){const l=new THREE.RectAreaLight('#edf8f5',7.5,2.7,.30);l.position.set(x,4.25,z);l.lookAt(x,0,z);scene.add(l);roomLights.push(l);}
+ for(const x of [-6.70,6.70]){const l=new THREE.RectAreaLight('#d2e9ff',3.5,.7,2.4);l.position.set(x,2.7,1);l.lookAt(0,1,1);scene.add(l);roomLights.push(l);}
+ const horizonGround=box(group,0,-.14,100,3200,.12,3200,mat('#526151',0,.96));horizonGround.castShadow=false;
+ const nightFixtures=[];for(const x of [-90,-45,45,90]){box(group,x,6,61,.14,12,.14,aluminium);const l=box(group,x,12,61,1.4,.07,.25,lightMat);l.castShadow=false;l.userData.batchExclude=true;nightFixtures.push(l);}
+ // Fine raindrops outside the glass. Trails use stretched sprites, kept off the indoor floor.
+ const exteriorRain=createGarageRain(group);const apronImpacts=createRainImpacts(group,{length:180,nearest:()=>({s:20}),at:(s,off)=>({p:new THREE.Vector3(off*5,-.006,11+s),yaw:0})});
+ let rainfall=0,isNight=false;
+ function setEnvironment(weather,hour){for(const mirror of reflectors)mirror.forceUpdate=true;const cloud={clear:0,cloudy:.38,overcast:.85,rain:.9,storm:1}[weather]??0;rainfall=weather==='storm'?1:weather==='rain'?.6:0;isNight=hour>=19||hour<5;const twilight=!isNight&&(hour<8||hour>16);const top=isNight?'#071326':twilight?'#45657d':cloud>.8?'#566873':'#548fc3',bottom=isNight?'#182a3b':twilight?'#deb591':cloud>.8?'#a6b3b7':'#d6e9ed';const gradient=ctx.createLinearGradient(0,0,0,1024);gradient.addColorStop(0,top);gradient.addColorStop(1,bottom);ctx.fillStyle=gradient;ctx.fillRect(0,0,2048,1024);let seed=47;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<30+Math.floor(cloud*90);i++){const x=random()*2048,y=140+random()*650,r=70+random()*210;const cloudGradient=ctx.createRadialGradient(x,y,0,x,y,r);const brightness=cloud>.8?'112,126,135':'240,246,246';cloudGradient.addColorStop(0,`rgba(${brightness},${(isNight?.03:.08)+cloud*.14})`);cloudGradient.addColorStop(1,`rgba(${brightness},0)`);ctx.fillStyle=cloudGradient;ctx.fillRect(x-r,y-r,r*2,r*2);}if(isNight&&cloud<.8){ctx.fillStyle='#c4d4e7';for(let i=0;i<100;i++)ctx.fillRect(random()*2048,random()*650,1.3,1.3);}skyTex.needsUpdate=true;seatMat.color.set(isNight?'#251018':'#8c3434');roof.material.color.set(isNight?'#34414b':'#d4d8d2');outsideFacade.color.set(isNight?'#111d29':twilight?'#858f90':'#a1aaa8');outsideWindows.emissive.set(isNight?'#b5d3c6':'#000000');outsideWindows.emissiveIntensity=isNight?.32:0;apronMat.color.set(isNight?'#1a252d':rainfall?'#3e5059':'#657173');outsideLight.intensity=isNight?.12:twilight?.65:1.7-cloud*1.2;outsideLight.color.set(twilight?'#ffe1b4':'#d7edff');apronMat.roughness=rainfall? .18:.65;apronMat.metalness=.025;exteriorRain.set(rainfall);gradeApron(rainfall);water.setRain(rainfall);waterHighlights.material.uniforms.rain.value=rainfall;glazingReflection.material.uniforms.strength.value=isNight?.50:.075;glazingReflection.material.uniforms.hasWater.value=rainfall>0?1:0;wetReflection.visible=rainfall>0;wetReflection.material.uniforms.strength.value=rainfall*.28;glass.normalScale.setScalar(rainfall>0?.8:0);for(const fixture of nightFixtures)fixture.visible=isNight||cloud>.8;if(circuitExterior)circuitExterior.traverse(o=>{const m=o.material;if(m?.emissive&&m.emissive.getHex()!==0)m.emissiveIntensity=isNight?2.0:0;});}
+ function update(dt){gradeApron.update(dt);water.update(dt);for(const mirror of reflectors)mirror.material.uniforms.time.value+=dt;exteriorRain.update(dt);apronImpacts.update(dt,{x:0,z:30},rainfall,rainfall);if(sky.material.uniforms?.clock)sky.material.uniforms.clock.value+=dt;}
+ function setVisible(visible){group.visible=visible;outsideLight.visible=visible;for(const l of roomLights)l.visible=visible;}
+ function constrainCamera(camera,target){target.x=THREE.MathUtils.clamp(target.x,-6.0,6.0);target.y=THREE.MathUtils.clamp(target.y,.12,3.9);target.z=THREE.MathUtils.clamp(target.z,-4.8,9.5);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-6.5,6.5);camera.position.y=THREE.MathUtils.clamp(camera.position.y,.12,4.15);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-4.85,10.05);if(Math.abs(camera.position.x)>3.30&&Math.abs(camera.position.x)<6.05&&camera.position.z<-4.12&&camera.position.y<2.6)camera.position.z=-4.12;camera.lookAt(target);}
+ let circuitExterior=null;function setCircuitExterior(vista){circuitExterior=vista;group.add(vista);if(vista.userData.skyMaterial){sky.material=vista.userData.skyMaterial;sky.rotation.y=-Math.PI/2;}for(const mirror of reflectors)mirror.forceUpdate=true;}
+ setEnvironment('clear',12.5);return {setCircuitExterior,group,setEnvironment,update,setVisible,constrainCamera,reflectors,water,emissiveFixtures};
+}
