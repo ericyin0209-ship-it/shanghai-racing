@@ -4,7 +4,7 @@ import * as THREE from 'three';
 export const compoundColours={soft:'#d7393c',medium:'#f1cf36',hard:'#e7e6de',intermediate:'#38b46b',wet:'#3795dd'};
 const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 export function createWetTreadGeometry(width,fullWet){
-  const around=512,across=128,half=width/2,positions=[],uvs=[],indices=[];
+  const around=512,across=64,half=width/2,positions=[],uvs=[],indices=[];
   // Additional rows close the shoulders down to the rim while keeping the source dimensions.
   const profile=[[-1,.235],[-1,.28]];
   for(let j=0;j<=across;j++){const x=j/across*2-1;profile.push([x,.36-.055*smooth(.70,1,Math.abs(x))]);}
@@ -20,7 +20,7 @@ export function createWetTreadGeometry(width,fullWet){
       cut=Math.max(cut,lateral)*(1-smooth(.88,1,Math.abs(fraction)));
     }
     const radius=base-cut*(fullWet?.005:.0035);
-    positions.push(x,radius*Math.cos(theta),radius*Math.sin(theta));uvs.push(i/around,j/(profile.length-1));
+    positions.push(x,radius*Math.cos(theta),radius*Math.sin(theta));uvs.push(i/around*Math.PI*.72*35.355,fraction*half*35.355);
   }
   const stride=around+1;
   for(let j=0;j<profile.length-1;j++)for(let i=0;i<around;i++){const a=j*stride+i,b=a+1,d=a+stride,c=d+1;indices.push(a,b,d,b,c,d);}
@@ -37,19 +37,20 @@ export function createTyreCompounds(wheels,inkMaterials){
     const original=spin.children.filter(o=>o.name.endsWith('-tread'));
     const material=original[0]?.material;if(!material)return null;
     const set={original,intermediate:null,wet:null};
-    for(const compound of ['intermediate','wet']){
+    set.ensure=compound=>{
+      if(set[compound])return set[compound];
       const rubber=material.clone();rubber.roughness=compound==='wet'?.65:.72;
       const width=index<2?.335:.429,key=width+':'+compound;
       if(!treadCache.has(key)){const geometry=createWetTreadGeometry(width,compound==='wet');geometry.userData.shared=true;treadCache.set(key,geometry);}
       const mesh=new THREE.Mesh(treadCache.get(key),rubber);
-      mesh.name='AMR23 '+compound+' tread';mesh.castShadow=mesh.receiveShadow=true;mesh.visible=false;spin.add(mesh);set[compound]=mesh;
-    }
+      mesh.name='AMR23 '+compound+' tread';mesh.castShadow=mesh.receiveShadow=true;mesh.visible=false;spin.add(mesh);set[compound]=mesh;return mesh;
+    };
     return set;
   });
   let previous=null;
   return {update(compound='medium'){
     if(compound===previous)return;previous=compound;
     for(const mat of inkMaterials)mat.color.set(compoundColours[compound]||compoundColours.medium);
-    for(const set of wetSets){if(!set)continue;const wet=compound==='wet'||compound==='intermediate';for(const mesh of set.original)mesh.visible=!wet;set.intermediate.visible=compound==='intermediate';set.wet.visible=compound==='wet';}
+    for(const set of wetSets){if(!set)continue;const wet=compound==='wet'||compound==='intermediate';for(const mesh of set.original)mesh.visible=!wet;if(wet)set.ensure(compound);if(set.intermediate)set.intermediate.visible=compound==='intermediate';if(set.wet)set.wet.visible=compound==='wet';}
   }};
 }

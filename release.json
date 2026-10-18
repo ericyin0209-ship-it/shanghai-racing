@@ -1,7 +1,9 @@
 {
-  "version": "2.0.0-preview.9",
+  "version": "2.0.0-preview.14",
   "channel": "web-preview",
   "nativeIncluded": false,
   "telemetryUpload": false,
-  "displayName": "VERTEX 极点"
+  "displayName": "VERTEX 极点",
+  "carAsset": "AMR23-R3",
+  "publication": "not uploaded"
 }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {wheelAngles} from './vehicle-kinematics.js';
 export {wheelAngles} from './vehicle-kinematics.js';
 export function applyWheelPose(car,steer,distance,wheelStates=null){
-  const angles=wheelAngles(steer,car.userData.wheelbase||3.4,car.userData.trackWidth||1.527);for(const pivot of car.userData.frontWheels)pivot.rotation.y=pivot.position.x>0?angles.left:angles.right;
+  const angles=wheelAngles(steer,car.userData.wheelbase||3.4,car.userData.trackWidth||1.527);for(const pivot of car.userData.frontWheels){pivot.userData.steeringAngle=pivot.position.x>0?angles.left:angles.right;pivot.rotation.y=pivot.userData.steeringAngle;}
   for(let i=0;i<car.userData.wheels.length;i++)car.userData.wheels[i].rotation.x=wheelStates?.[i]?.spin??distance/(car.userData.wheelRadius||.329);
   // Forward is +Z: positive steering turns toward driver-left (+X).
   // Viewed from the cockpit, the wheel top must move toward that same side.
@@ -19,6 +19,6 @@ export function applyChassisMotion(car,v,dt,track,wetness=0){
   const squash=Math.max(.987,Math.min(1,1-Math.max(0,w.load-1800)*.0000012));pivot.scale.y=squash;const wanted=.36*squash+w.roadHeight-height;pivot.position.y+=(wanted-pivot.position.y)*follow;
   pivot.rotation.z=(pivot.position.x>0?-1:1)*(.025+Math.min(.012,Math.max(0,w.load-1800)*.0000015));
  }
- m.roll+=( (v.roll||0)-m.roll)*follow;m.pitch+=((v.pitch||0)-m.pitch)*follow;m.heave=0;
+ m.roll+=( Math.max(-.018,Math.min(.018,v.roll||0))-m.roll)*follow;m.pitch+=(Math.max(-.014,Math.min(.014,v.pitch||0))-m.pitch)*follow;m.heave=0;
  data.chassis.rotation.set(m.pitch,0,m.roll);data.chassis.position.y=0;data.updateSuspension?.();return m;
 }

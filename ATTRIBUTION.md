@@ -103,3 +103,22 @@ Rear and side metallic-mesh cladding and spectator entrances are documented in [
 
 ## AMR23 external assembly refinement
 User screenshots identified exposed front suspension pickups, sidepod intake/mirror overlap, airbox joins and rear endplate/tyre interference. Photographic comparisons used the [F1 official AMR23 launch gallery](https://www.formula1.com/en/latest/article/gallery-check-out-every-angle-of-aston-martins-2023-f1-car-and-livery.1uEMgsasHptZMPm4fsFd7P), specifically its front-three-quarter, side-profile and rear photographs. Reference images are not bundled. New inlet shells, recessed ducts, mirror supports, fitted paint decals and endplate tyre clearance are original procedural render geometry; pickup locations and dimensions are estimates. The white rounded XP badge is retained following the side photograph; it is not a scanned sponsor artwork. The nose wings SVG is a white/cropped derivative of the existing bundled brand icon. Original user GLB remains byte-identical. This work does not establish an indistinguishable or factory-CAD-accurate replica.
+
+
+## AMR23 R3 车身重建（2.0 preview.10）
+
+以用户提供的 AMR23_Detailed_v2.blend 为基础，在单独的 AMR23_R3.blend 中重建车身与空气动力学表面；原始 GLB 保持不变。开发版加载 assets/models/amr23-r3.glb，分享版使用内容一致的 glTF 与分段二进制资源。新增连续鼻锥/座舱开口、封闭侧箱与内部进气道、发动机罩、薄翼片、轮罩、后视镜外壳及贴花图集。碳纤维和橡胶微表面转为网页可读取的纹理。方向盘面板和动态后视镜由网页代码生成，编辑版 Blender 文件中的方向盘是原始组件。
+
+外观参考：
+- F1 官方 AMR23 发布图库：https://www.formula1.com/en/latest/article/gallery-check-out-every-angle-of-aston-martins-2023-f1-car-and-livery.1uEMgsasHptZMPm4fsFd7P
+- F1 技术分析：https://www.formula1.com/en/latest/article/tech-analysis-unpacking-the-aggressive-new-aston-martin-amr23.2CNfWh0iTNGMAdp3xtgqwx
+- Aramco、Aston Martin、BOSS 标识沿用原工程中取自车队官网的 SVG；其余标识从原模型投射为平面图集，部分变形文字重排。商标归相应权利人。
+
+公开发布照片含渲染图与实拍图，个别标识与翼片配置并不一致。本模型参考公开外观重建；隐藏结构、座舱和悬挂安装点仍为近似，未经厂家 CAD 或实车扫描验证，也没有经过量化的“90% 相似度”认证。
+
+R3 图集中的 Cognizant、Aramco、Aston Martin 与 BOSS 图形来自现有工程保存的品牌矢量参考；品牌及赞助商标识权利归各自权利人。照片参考用于外观研究，不是工厂 CAD 或实车扫描数据。
+
+## 风洞性能更新（2.0 preview.11）
+保留已有几何、表面材质与体积烟雾表现，修正风扇局部叶片倾角。静态设备合并、叶片实例化；噪声格点预计算，静态烟雾光照积分缓存，烟雾单独按受控分辨率绘制后依据深度重建；全场景与车身保持原输出分辨率。烟雾仍是示意气流，不是经过校准的 CFD。
+
+风洞近景额外采用逐帧共享的 128×64×256 世界空间动态密度场，替代每个像素每个步长重复求湍流；烟雾过滤重建属于近似渲染，不能保证与旧版逐像素一致。

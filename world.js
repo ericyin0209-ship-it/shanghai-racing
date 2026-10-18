@@ -1,12 +1,13 @@
+import {createSceneDetail} from './scene-detail.js?v=215c';
 import {createTrackLighting} from './track-lighting.js';
 import {batchStaticMeshes} from './static-batching.js';
 import {snapShadowFocus} from './shadow-focus.js';
 import {createLotusGrandstands} from './lotus-grandstands.js';
 import {createPitArchitecture} from './pit-architecture.js';
-import {waterRippleGLSL} from './water-ripples.js';
+import {waterRippleGLSL} from './water-ripples.js?v=215c';
 import {createCircuitEnvelope,capturePitVista} from './circuit-envelope.js';
-import {partitionStaticInstances} from './spatial-batches.js';
-import {createCircuitLifeDetail} from './circuit-livedetail.js';
+import {partitionStaticInstances} from './spatial-batches.js?v=215b';
+import {createCircuitLifeDetail} from './circuit-livedetail.js?v=215b';
 import * as THREE from 'three';
 import {addGroundVariation} from './terrain-shading.js';
 import {createRainImpacts} from './rain-impact.js';
@@ -15,11 +16,11 @@ import {Sky} from './vendor/Sky.js';
 import {Reflector} from './vendor/Reflector.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {createSurroundings} from './surroundings.js';
-import {createCircuitDetailUpgrade} from './circuit-detail-upgrade.js';
+import {createSurroundings} from './surroundings.js?v=215b';
+import {createCircuitDetailUpgrade} from './circuit-detail-upgrade.js?v=215b';
 import {createTracksideDetails} from './trackside-details.js';
 import {createFoliage} from './foliage.js';
-import {createCircuitFinish} from './circuit-finish.js';
+import {createCircuitFinish} from './circuit-finish.js?v=215b';
 import {createAtmosphere} from './atmosphere.js';
 import {solarPosition,clamp} from './physics.js';
 function seeded(seed=38){return ()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
@@ -32,7 +33,7 @@ export async function createWorld(scene,renderer,track){
   asphaltTex.colorSpace=THREE.SRGBColorSpace;for(const t of [asphaltTex,asphaltNormal,asphaltRoughness]){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=renderer.capabilities.getMaxAnisotropy();}
   const outdoorGenerator=new THREE.PMREMGenerator(renderer),outdoorEnv=outdoorGenerator.fromEquirectangular(hdr);outdoorGenerator.dispose();
   const freshAsphalt=texture(1024,(c,s)=>{const image=c.createImageData(s,s);for(let i=0;i<s*s;i++){const value=69+random()*22+(random()<.025?25:0);image.data[i*4]=value;image.data[i*4+1]=value+1;image.data[i*4+2]=value+2;image.data[i*4+3]=255;}c.putImageData(image,0,0);});freshAsphalt.anisotropy=renderer.capabilities.getMaxAnisotropy();
-  const asphalt=new THREE.MeshPhysicalMaterial({color:'#b0b0b0',map:freshAsphalt,normalMap:asphaltNormal,normalScale:new THREE.Vector2(.11,.11),roughnessMap:asphaltRoughness,roughness:1,metalness:.02,clearcoat:0});
+  const asphalt=new THREE.MeshPhysicalMaterial({color:'#b0b0b0',map:freshAsphalt,normalMap:asphaltNormal,normalScale:new THREE.Vector2(.11,.11),roughnessMap:asphaltRoughness,roughness:1,metalness:.02,clearcoat:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2});
   const dryPixels=new Uint8Array(track.n*4),dryTexture=new THREE.DataTexture(dryPixels,track.n,1,THREE.RGBAFormat);dryTexture.minFilter=dryTexture.magFilter=THREE.LinearFilter;dryTexture.wrapS=THREE.RepeatWrapping;dryTexture.needsUpdate=true;const wetUniform={value:0},waterClock={value:0};asphalt.onBeforeCompile=shader=>{shader.uniforms.waterClock=waterClock;shader.uniforms.roadWet=wetUniform;shader.uniforms.dryTrail={value:dryTexture};shader.uniforms.circuitLength={value:track.length};shader.vertexShader='varying vec3 wetRoadPoint;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nwetRoadPoint=(modelMatrix*vec4(transformed,1.)).xyz;');shader.fragmentShader='varying vec3 wetRoadPoint;\n'+waterRippleGLSL+'\nuniform sampler2D dryTrail;uniform float circuitLength;uniform float roadWet;uniform float waterClock;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nfloat ss=vMapUv.y/.15,oo=vMapUv.x/.15;float broad=.5+.5*sin(ss*.039+sin(ss*.013)*2.)*sin(oo*1.7+ss*.011);float fine=.5+.5*sin(ss*.31+oo*3.4)*sin(ss*.097-oo*1.9);float waterPatch=smoothstep(.36,.82,broad*.76+fine*.24);vec4 trail=texture2D(dryTrail,vec2(fract(ss/circuitLength),.5));float dryOff=trail.g*20.-10.;float localWet=max(0.,roadWet-trail.r*exp(-pow(oo-dryOff,2.)/5.));roughnessFactor*=.94+.06*sin(ss*.9+oo*4.);roughnessFactor=mix(roughnessFactor,max(.22,roughnessFactor*.65),localWet*waterPatch);diffuseColor.rgb*=1.-localWet*.17;');shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
  vec2 waterSlope=rainWaterSlope(wetRoadPoint.xz,waterClock,localWet);
  normal=normalize(normal+mat3(viewMatrix)*vec3(waterSlope.x,0.,waterSlope.y)*.072);
@@ -71,11 +72,12 @@ export async function createWorld(scene,renderer,track){
   for(let i=0;i<24;i++){const s=-20-i*8.5,x=i%2?3:-3;for(let k=0;k<2;k++){obj.position.set(x+(k?1:-1),.07,s);obj.updateMatrix();grid.setMatrixAt(i*2+k,obj.matrix);}}scene.add(grid);
   // Armco follows the full source-coordinate circuit.
   const railMat=new THREE.MeshStandardMaterial({color:'#b4babc',metalness:.65,roughness:.45});
-  const count=Math.ceil(track.length/5),rails=new THREE.InstancedMesh(new THREE.BoxGeometry(.18,.70,5.2),railMat,count*2),posts=new THREE.InstancedMesh(new THREE.BoxGeometry(.18,2.6,.16),steel,Math.ceil(count/3)*2);let postId=0;
-  for(let i=0;i<count;i++)for(const side of [-1,1]){const f=track.at(i*track.length/count,side*19);obj.position.copy(f.p);obj.position.y=.48;obj.rotation.set(0,f.yaw,0);obj.updateMatrix();rails.setMatrixAt(i*2+(side>0?1:0),obj.matrix);if(i%3===0){obj.position.y=1.3;obj.updateMatrix();posts.setMatrixAt(postId++,obj.matrix);}}
-  posts.count=postId;rails.castShadow=true;rails.receiveShadow=true;scene.add(rails,posts);
+  const count=Math.ceil(track.length/5),rails=new THREE.InstancedMesh(new THREE.BoxGeometry(.18,.70,(track.length/count)*.998),railMat,count*2);
+  for(let i=0;i<count;i++)for(const side of [-1,1]){const f=track.at(i*track.length/count,side*19);obj.position.copy(f.p);obj.position.y=.48;obj.rotation.set(0,f.yaw,0);obj.updateMatrix();rails.setMatrixAt(i*2+(side>0?1:0),obj.matrix);}
+  rails.castShadow=true;rails.receiveShadow=true;scene.add(rails);
   const fenceTexture=texture(1024,(c,s)=>{c.clearRect(0,0,s,s);c.strokeStyle='#81888a';c.lineWidth=4;for(let i=-s;i<s*2;i+=64){c.beginPath();c.moveTo(i,0);c.lineTo(i+s,s);c.stroke();c.beginPath();c.moveTo(i,0);c.lineTo(i-s,s);c.stroke();}});
-  const fenceMat=new THREE.MeshStandardMaterial({map:fenceTexture,transparent:true,alphaTest:.25,roughness:.65,metalness:.4,side:THREE.DoubleSide});
+  fenceTexture.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  const fenceMat=new THREE.MeshStandardMaterial({map:fenceTexture,transparent:false,alphaTest:.4,alphaToCoverage:true,roughness:.8,metalness:.18,side:THREE.DoubleSide});
   for(const side of [-1,1]){const p=[],uv=[],idx=[];for(let i=0;i<=track.n;i+=4){const q=track.points[i],normal=track.frames[i].normal,x=q.x+normal.x*side*19,z=q.z+normal.z*side*19;p.push(x,.85,z,x,2.8,z);uv.push(i/track.n*track.length/2,0,i/track.n*track.length/2,1);const j=p.length/3-2;if(j>=2)idx.push(j-2,j,j-1,j-1,j,j+1);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();scene.add(new THREE.Mesh(g,fenceMat));}
   // Pit apron and garages: visual prototypes, dimensions pending survey.
   box(26,.1,535,-32,.00,-257,new THREE.MeshStandardMaterial({color:'#717a7b',map:asphaltTex,roughness:.86}));
@@ -86,7 +88,7 @@ export async function createWorld(scene,renderer,track){
   for(let i=0;i<30;i++){const z=-42-i*14.4;box(.2,.64,11.4,-35.6,4.4,z,new THREE.MeshStandardMaterial({color:garageColors[Math.floor(i/5)%6]}));box(.25,8,.3,-35.4,7,z+6.7,steel);sign(String(i+1).padStart(2,'0'),2,.8,-35.35,5.0,z,Math.PI/2);}
   // Grandstand with raked terraces, seats and characteristic sculptural canopy.
   const stands=new THREE.Group();stands.userData={surveyed:false,type:'architectural reference prototype'};scene.add(stands);
-  const seatProfile=new THREE.Shape();seatProfile.moveTo(-.25,-.08);seatProfile.lineTo(.22,-.08);seatProfile.quadraticCurveTo(.27,-.06,.27,.14);seatProfile.lineTo(.28,.42);seatProfile.quadraticCurveTo(.28,.46,.21,.46);seatProfile.lineTo(.18,.15);seatProfile.quadraticCurveTo(.16,.015,-.23,.035);seatProfile.quadraticCurveTo(-.28,.02,-.25,-.08);const seatShell=new THREE.ExtrudeGeometry(seatProfile,{depth:.46,bevelEnabled:true,bevelSize:.008,bevelThickness:.008,bevelSegments:2,steps:1,curveSegments:12});seatShell.translate(0,0,-.23);seatShell.rotateY(Math.PI/2);
+  const seatProfile=new THREE.Shape();seatProfile.moveTo(-.25,-.08);seatProfile.lineTo(.22,-.08);seatProfile.quadraticCurveTo(.27,-.06,.27,.14);seatProfile.lineTo(.28,.42);seatProfile.quadraticCurveTo(.28,.46,.21,.46);seatProfile.lineTo(.18,.15);seatProfile.quadraticCurveTo(.16,.015,-.23,.035);seatProfile.quadraticCurveTo(-.28,.02,-.25,-.08);const seatShell=new THREE.ExtrudeGeometry(seatProfile,{depth:.46,bevelEnabled:true,bevelSize:.008,bevelThickness:.008,bevelSegments:2,steps:1,curveSegments:12});seatShell.translate(0,0,-.23);seatShell.rotateY(Math.PI/2);seatShell.userData.seatShell=true;
   const rows=42,columns=360,seats=new THREE.InstancedMesh(seatShell,new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.60}),rows*columns);
   for(let r=0;r<rows;r++){
     box(.85,.42,355,29+r*.75+(r>20?2.4:0),1.0+r*.43+(r>20?1.3:0),-255,concrete,stands);
@@ -115,8 +117,9 @@ export async function createWorld(scene,renderer,track){
   }
   createLotusGrandstands(scene,track,seatShell);
   // Garage facade details: window mullions, door ribs, utility boxes and roof rails.
-  for(let i=0;i<152;i++)box(.08,3.75,.08,-34.97,8.6,-30-i*2.95,steel);
-  for(let i=0;i<30;i++){const z=-42-i*14.4;for(let j=0;j<11;j++)box(.03,.027,10.55,-35.65,.65+j*.28,z,steel);box(.25,.8,.28,-35.4,1.4,z+5.9,new THREE.MeshStandardMaterial({color:'#b62e33',roughness:.55}));box(.27,.57,.41,-35.35,.44,z-5.7,dark);}
+  // Facade mullions come from the single bay-aligned detail set below.
+  for(let i=0;i<30;i++){const z=-42-i*14.4;// The shutters are rolled into the head casing; no ribs across the open bay.
+box(.25,.8,.28,-35.4,1.4,z+5.9,new THREE.MeshStandardMaterial({color:'#b62e33',roughness:.55}));box(.27,.57,.41,-35.35,.44,z-5.7,dark);}
   for(let i=0;i<70;i++){box(.06,.78,.06,-35.8,11.9,-33-i*6.35,steel);box(.07,.78,.07,-58.5,11.9,-33-i*6.35,steel);}box(.05,.05,455,-35.8,12.25,-255,steel);box(.05,.05,455,-58.5,12.25,-255,steel);
   // Timing gantry above the start line.
   box(.45,6,.45,-9,3,4,steel);box(.45,6,.45,9,3,4,steel);box(18.6,.65,.65,0,5.9,4,steel);
@@ -147,13 +150,13 @@ export async function createWorld(scene,renderer,track){
   // Environment sky and actual geographic sun direction for 7 October, UTC+8 local track time.
   const sky=new Sky();sky.scale.setScalar(9000);sky.visible=false;scene.add(sky);const atmosphere=createAtmosphere(scene,hdr);
   const hemi=new THREE.HemisphereLight('#cedcf2','#52684b',1.2);scene.add(hemi);
-  const sun=new THREE.DirectionalLight('#ffe5ba',3.2);sun.castShadow=true;const shadowSize=Math.min(8192,renderer.capabilities.maxTextureSize);sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.camera.left=-64;sun.shadow.camera.right=64;sun.shadow.camera.top=64;sun.shadow.camera.bottom=-64;sun.shadow.camera.near=220;sun.shadow.camera.far=480;sun.shadow.bias=-.00001;sun.shadow.normalBias=.006;scene.add(sun,sun.target);
+  const sun=new THREE.DirectionalLight('#ffe5ba',3.2);sun.castShadow=true;const shadowSize=Math.min(8192,renderer.capabilities.maxTextureSize);sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.camera.left=-32;sun.shadow.camera.right=32;sun.shadow.camera.top=32;sun.shadow.camera.bottom=-32;sun.shadow.autoUpdate=false;sun.shadow.needsUpdate=true;sun.shadow.camera.near=220;sun.shadow.camera.far=480;sun.shadow.bias=-.00001;sun.shadow.normalBias=.006;scene.add(sun,sun.target);
   const moon=new THREE.DirectionalLight('#a5b8e2',0);moon.position.set(120,250,100);scene.add(moon);
   scene.fog=new THREE.FogExp2('#b7c3bd',.00015);
   const pmrem=new THREE.PMREMGenerator(renderer),envScene=new THREE.Scene(),envSky=new Sky();envSky.scale.setScalar(9000);envScene.add(envSky);envSky.visible=false;const reflectionAtmosphere=createAtmosphere(envScene,hdr);
   const mirrorGeometry=track.ribbon(-7.18,7.18,.006);mirrorGeometry.rotateX(Math.PI/2);
   const mirror=new Reflector(mirrorGeometry,{textureWidth:2048,textureHeight:2048,color:'#7c8a91',clipBias:.004});
-  mirror.camera.userData.reflectionView=true;mirror.rotation.x=-Math.PI/2;mirror.position.set(0,.035,0);mirror.material.transparent=true;mirror.material.depthWrite=false;
+  mirror.camera.userData.reflectionView=true;mirror.rotation.x=-Math.PI/2;mirror.position.set(0,.035,0);mirror.material.transparent=true;mirror.material.depthWrite=false;mirror.material.polygonOffset=true;mirror.material.polygonOffsetFactor=-1;mirror.material.polygonOffsetUnits=-3;
   mirror.material.fragmentShader=mirror.material.fragmentShader.replace('gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );','float waterPatch=.5+.5*sin(vUv.x*17.0+sin(vUv.y*1.7))*sin(vUv.y*5.3);gl_FragColor = vec4( blendOverlay( base.rgb, color ), (.035+waterPatch*.21)*pow(1.-abs(normalize(cameraPosition-roadPoint).y),2.) );');
   mirror.material.vertexShader=mirror.material.vertexShader.replace('varying vec4 vUv;','varying vec4 vUv; varying vec3 roadPoint;').replace('vUv = textureMatrix','roadPoint=(modelMatrix*vec4(position,1.0)).xyz; vUv = textureMatrix');mirror.material.fragmentShader=mirror.material.fragmentShader.replace('varying vec4 vUv;','varying vec4 vUv; varying vec3 roadPoint;').replace('vUv.x*17.0+sin(vUv.y*1.7)','roadPoint.x*.42+sin(roadPoint.z*.15)').replace('vUv.y*5.3','roadPoint.z*.32');
   mirror.material.uniforms.waterClock=waterClock;mirror.material.uniforms.roadWet=wetUniform;mirror.material.uniforms.dryTrail={value:dryTexture};mirror.material.uniforms.circuitLength={value:track.length};
@@ -164,7 +167,7 @@ export async function createWorld(scene,renderer,track){
   mirror.material.fragmentShader=mirror.material.fragmentShader.replace('(.035+waterPatch*.21)','max(0.,roadWet-texture2D(dryTrail,vec2(fract(s/circuitLength),.5)).r*exp(-pow(o-(texture2D(dryTrail,vec2(fract(s/circuitLength),.5)).g*20.-10.),2.)/5.))*(.005+waterPatch*.075)');
   mirror.material.fragmentShader=waterRippleGLSL+'\nuniform float waterClock;\n'+mirror.material.fragmentShader;
   mirror.material.fragmentShader=mirror.material.fragmentShader.replace('vec4 base = texture2DProj( tDiffuse, vUv );',`vec4 distorted=vUv;vec2 waterSlope=rainWaterSlope(roadPoint.xz,waterClock,roadWet);vec2 screenSlope=vec2(dot(dFdx(roadPoint.xz),waterSlope),dot(dFdy(roadPoint.xz),waterSlope));distorted.xy+=screenSlope*.012*vUv.w;vec4 base=texture2DProj(tDiffuse,distorted);`);
-  const reflect=mirror.onBeforeRender;let lastReflection=-1000;mirror.onBeforeRender=function(...args){const now=performance.now();if(now-lastReflection<16)return;lastReflection=now;reflect.apply(this,args);};
+  const reflect=mirror.onBeforeRender,reflectionSize=new THREE.Vector2();let lastReflection=-1000;mirror.onBeforeRender=function(...args){const renderer=args[0],now=performance.now();if(now-lastReflection<16)return;lastReflection=now;renderer.getDrawingBufferSize(reflectionSize);const scale=Math.min(1,2048/Math.max(reflectionSize.x,reflectionSize.y)),width=Math.max(256,Math.ceil(reflectionSize.x*scale/32)*32),height=Math.max(256,Math.ceil(reflectionSize.y*scale/32)*32),target=mirror.getRenderTarget();if(target.width!==width||target.height!==height)target.setSize(width,height);reflect.apply(this,args);};
   mirror.visible=false;mirror.userData.dynamic=true;scene.add(mirror);
   const rainCount=2600,rainPositions=new Float32Array(rainCount*6),rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
   for(let i=0;i<rainCount;i++){const j=i*6,x=(random()-.5)*100,z=(random()-.5)*100,y=random()*34;rainPositions[j]=x;rainPositions[j+1]=y;rainPositions[j+2]=z;rainPositions[j+3]=x+.12;rainPositions[j+4]=y-.9;rainPositions[j+5]=z+.16;}
@@ -174,7 +177,7 @@ export async function createWorld(scene,renderer,track){
   const sunDirection=new THREE.Vector3();
   function setEnvironment(weather,hour){
     if(lastEnv&&currentWeather===weather&&currentHour===+hour)return {weather,hour,targetWet};
-    currentWeather=weather;currentHour=+hour;
+    currentWeather=weather;currentHour=+hour;sun.shadow.needsUpdate=true;
     const values={clear:[0,0],cloudy:[.35,0],overcast:[.8,0],rain:[.9,.58],storm:[1,1]};[cloudiness,targetWet]=values[weather];
     const solar=solarPosition(currentHour),[dx,dz]=track.data.axis;
     sunDirection.set(solar.east*dz+solar.north*dx,solar.up,solar.east*dx-solar.north*dz).normalize();
@@ -204,7 +207,7 @@ export async function createWorld(scene,renderer,track){
     mirror.visible=wetness>.12;
     const intensity=currentWeather==='storm'?1:currentWeather==='rain'?.48:0;rainImpacts.update(dt,focus,wetness,intensity,waterClock.value);rain.visible=intensity>0;rainGeo.setDrawRange(0,Math.round(rainCount*2*intensity));rain.position.set(focus.x,0,focus.z);
 
-    const center=lightCenter.set(focus.x,0,focus.z);snapShadowFocus(center,sunDirection,128,sun.shadow.mapSize.x,center);sun.target.position.copy(center);sun.position.copy(center).addScaledVector(sunDirection,350);
+    const center=lightCenter.set(focus.x,0,focus.z);snapShadowFocus(center,sunDirection,sun.shadow.camera.right-sun.shadow.camera.left,sun.shadow.mapSize.x,center);if(center.distanceToSquared(sun.target.position)>1e-10||(dt>0&&Number.isFinite(focus.speed)))sun.shadow.needsUpdate=true;sun.target.position.copy(center);sun.position.copy(center).addScaledVector(sunDirection,350);
     trackLighting.update(focus);
     return {wetness,rain:intensity,hour:currentHour,weather:currentWeather};
   }
@@ -214,9 +217,11 @@ export async function createWorld(scene,renderer,track){
   // Indexed geometry stays indexed; shared originals remain usable by the garage vista.
   const architectureBatches=batchStaticMeshes(scene,80);
   const spatialStats=partitionStaticInstances(scene);
+  partitionStaticInstances(pitVista,60);const detail=createSceneDetail(scene),vistaDetail=createSceneDetail(pitVista);
+  function updateDetail(camera,height,trackView=true){const controller=trackView?detail:vistaDetail,before=controller.stats.changes,result=controller.update(camera,height);if(trackView){const half=camera.position.y>80?256:32,c=sun.shadow.camera;if(c.right!==half){c.left=c.bottom=-half;c.right=c.top=half;c.updateProjectionMatrix();sun.shadow.needsUpdate=true;}if(result.changes!==before)sun.shadow.needsUpdate=true;}return result;}const detailStats={world:detail.stats,vista:vistaDetail.stats};
   setEnvironment('clear',12.5);
   function resetConditions(){wetness=targetWet;track.drying.fill(0);track.dryOffsets.fill(0);track.updateWater(0,wetness);}
   function captureConditions(full=false){const state={weather:currentWeather,hour:currentHour,wetness,waterTime:waterClock.value};if(full){state.drying=track.drying.slice();state.dryOffsets=track.dryOffsets.slice();}return state;}
   function restoreConditions(state,a=state,b=a,u=0){setEnvironment(state.weather,state.hour);wetness=state.wetness;waterClock.value=state.waterTime;if(a.drying)for(let i=0;i<track.n;i++){track.drying[i]=a.drying[i]+((b.drying?.[i]??a.drying[i])-a.drying[i])*u;track.dryOffsets[i]=a.dryOffsets[i]+((b.dryOffsets?.[i]??a.dryOffsets[i])-a.dryOffsets[i])*u;}track.updateWater(0,wetness);}
-  return {pitVista,standEnvelope,trackLighting,architectureBatches,setEnvironment,resetConditions,captureConditions,restoreConditions,spatialStats,lifeDetail,update,sun,context,tracksideDetails,get exposure(){return exposure;},get wetness(){return wetness;},get targetWet(){return targetWet;},signalMaterials,road,asphalt,sky,architecture,rainImpacts};
+  return {updateDetail,detailStats,pitVista,standEnvelope,trackLighting,architectureBatches,setEnvironment,resetConditions,captureConditions,restoreConditions,spatialStats,lifeDetail,update,sun,context,tracksideDetails,get exposure(){return exposure;},get wetness(){return wetness;},get targetWet(){return targetWet;},signalMaterials,road,asphalt,sky,architecture,rainImpacts};
 }
