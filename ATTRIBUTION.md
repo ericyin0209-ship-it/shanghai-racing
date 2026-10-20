@@ -122,3 +122,7 @@ R3 图集中的 Cognizant、Aramco、Aston Martin 与 BOSS 图形来自现有工
 保留已有几何、表面材质与体积烟雾表现，修正风扇局部叶片倾角。静态设备合并、叶片实例化；噪声格点预计算，静态烟雾光照积分缓存，烟雾单独按受控分辨率绘制后依据深度重建；全场景与车身保持原输出分辨率。烟雾仍是示意气流，不是经过校准的 CFD。
 
 风洞近景额外采用逐帧共享的 128×64×256 世界空间动态密度场，替代每个像素每个步长重复求湍流；烟雾过滤重建属于近似渲染，不能保证与旧版逐像素一致。
+
+## Map environment revision 218 — 2026-10-20
+
+Procedural reconstruction informed by Tilke Architecture Portfolio (2025), https://tilke.de/wp-content/uploads/2025/05/2025-Tilke-Portfolio-Architecture-LQ-1.pdf ; Formula 1 Shanghai feature and site photographs, https://www.formula1.com/en/latest/article/why-we-love-the-chinese-grand-prix.3AqunaR9kFuH2D2dWG8wqJ ; Shanghai venue map, https://english.shanghai.gov.cn/assets/Download/Shanghai%20International%20Circuit%20Map.pdf . No photographs from these sources are embedded as game textures. Existing mapped footprints and source attribution retained. Architectural dimensions and minor fixtures are photographic/engineering estimates, not a surveyed or CAD-certified 1:1 replica.

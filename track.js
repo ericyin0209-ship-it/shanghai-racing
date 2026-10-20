@@ -37,8 +37,8 @@ export async function createTrack(){
   function updateWater(dt,wet,focus){currentWet=wet;const decay=Math.exp(-dt*(wet>.5?.02:.008));if(dt>0)for(let i=0;i<n;i++)drying[i]*=decay;if(focus?.speed>8){const near=nearest(focus.x,focus.z),k=near.index;for(let j=-2;j<=2;j++){const i=(k+j+n)%n;dryOffsets[i]=near.offset;drying[i]=Math.min(.20,drying[i]+dt*.018);}}}
   function isPitLane(x,z){return x<-18&&x>-32&&z>-535&&z<35;}
   function surface(x,z,wet=currentWet){const near=nearest(x,z),localWet=Math.max(0,wet-drying[near.index]*Math.exp(-Math.pow(near.offset-dryOffsets[near.index],2)/5)),pit=isPitLane(x,z);return {...near,height:pit?.035:height(near.s,near.offset),...waterAt(near.s,near.offset,pit?wet:localWet,length),offroad:!pit&&Math.abs(near.offset)>8.35,curb:!pit&&Math.abs(near.offset)>7.2&&Math.abs(near.offset)<8.35};}
-  function ribbon(inner,outer,heightOffset=.035,start=0,end=n){
-    const verts=[],uvs=[],idx=[],across=Math.abs(outer-inner)>2?8:2;
+  function ribbon(inner,outer,heightOffset=.035,start=0,end=n,acrossOverride=0){
+    const verts=[],uvs=[],idx=[],across=acrossOverride||(Math.abs(outer-inner)>2?8:2);
     for(let i=start;i<=end;i++)for(let j=0;j<=across;j++){
       const off=inner+(outer-inner)*j/across,p=points[i],normal=frames[i].normal,s=i*length/n;
       let y=height(s,off)+heightOffset-.035;if(heightOffset===.09)y=height(s,off);

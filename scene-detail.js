@@ -4,7 +4,7 @@ import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
 const cache=new WeakMap();
 function variants(g){
  if(cache.has(g))return cache.get(g);let mid=null,far=null;const p=g.parameters;
- if(g.userData.seatShell&&p?.shapes){
+ if(g.userData.environmentLOD){[mid,far]=g.userData.environmentLOD;}else if(g.userData.seatShell&&p?.shapes){
   mid=new THREE.ExtrudeGeometry(p.shapes,{depth:.46,bevelEnabled:false,steps:1,curveSegments:3});mid.translate(0,0,-.23);mid.rotateY(Math.PI/2);
   const seat=new THREE.BoxGeometry(.46,.07,.50).translate(0,-.025,-.005),back=new THREE.BoxGeometry(.46,.49,.07).translate(0,.185,-.235);far=mergeGeometries([seat,back],false);seat.dispose();back.dispose();
  }else if(g.type==='TorusGeometry'&&p.tubularSegments>=24){mid=new THREE.TorusGeometry(p.radius,p.tube,6,16,p.arc);far=new THREE.TorusGeometry(p.radius,p.tube,4,12,p.arc);
@@ -20,7 +20,7 @@ export function createSceneDetail(root){
  root.updateWorldMatrix(true,true);const entries=[],stats={groups:0,lodGroups:0,hiddenSubpixelGroups:0,high:0,medium:0,low:0,changes:0};const matrix=new THREE.Matrix4(),scale=new THREE.Vector3();
  root.traverse(mesh=>{if(!mesh.isInstancedMesh||mesh.userData.dynamic||mesh.material?.isShaderMaterial||mesh.material?.transparent)return;
   const geometry=mesh.geometry;geometry.computeBoundingSphere();geometry.computeBoundingBox();const lod=variants(geometry);let size=geometry.boundingSphere.radius*2,maxScale=0;
-  for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);scale.setFromMatrixScale(matrix);maxScale=Math.max(maxScale,scale.x,scale.y,scale.z);}size*=maxScale;
+  for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);scale.setFromMatrixScale(matrix);maxScale=Math.max(maxScale,scale.x,scale.y,scale.z);}size=(geometry.userData.lodMetricSize||size)*maxScale;
   // Bolts, drain slots and hidden sub-pixel fittings may be omitted only once no instance can resolve.
   const micro=size<.35&&!/lens|lamp|light|luminous|signal|glow/i.test(mesh.name);if(!lod&&!micro)return;
   mesh.computeBoundingBox();entries.push({mesh,lod,size,box:mesh.boundingBox.clone(),worldBox:new THREE.Box3(),level:0,hidden:false,canHide:micro,originalVisible:mesh.visible});

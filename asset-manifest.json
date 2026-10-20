@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-preview.14",
+  "version": "2.0.0-preview.17",
   "cars": [
     {
       "id": "green",
@@ -246,5 +246,36 @@
     "shadow": "cached stationary inspection; 64m driving footprint, 512m aerial footprint; 4096 maximum outdoor shadow map",
     "fences": "opaque alpha coverage instead of large transparent sorted strips",
     "carModelChanged": false
+  },
+  "sceneRepair216": {
+    "standAxis": "aligned to rendered pit straight, -0.76557 degrees",
+    "standDetails": "joined roof trusses, aligned aisle treads, seated shells, shared detail transforms, front podium",
+    "guidance": "full 5451m lap in all four cameras; original widths and opacity retained",
+    "visorRain": "stronger droplet refraction, coalescence and runoff; up to 3072px water height map",
+    "quality": "ultra pixel ratio 1.5 to 2.25, wet-road reflections up to 3072px",
+    "carModelChanged": false
+  },
+  "mapEnvironment218": {
+    "landmarks": "rebuilt elliptical shells and tower curtain walls; panelised pit facade; roof seams and shared rear promenade",
+    "paddock": "24 existing mapped footprints; extended roof, shore coping, view-limited static water reflection",
+    "trackside": "formed guard rails with screen-size LOD, metric 1m kerb modules, sparse rubber marbles, grounded recovery tyre stacks",
+    "performance": "shared instancing, material caches, bounded kerb segments, one 1024x576 lake reflection only near paddock",
+    "scope": "map/environment only; car asset, controls, physics, profile storage and audio preserved",
+    "exactStaticConstructionBatches": true,
+    "surveyed": false
+  },
+  "accounts219": {
+    "guestOnboarding": true,
+    "localIdentityAndArchivePersistence": true,
+    "languages": [
+      "zh-CN",
+      "en",
+      "fr",
+      "ja",
+      "ko"
+    ],
+    "backend": "Supabase REST adapter and separate RLS SQL installation file",
+    "cloudConfigured": false,
+    "providerEndToEndVerified": false
   }
 }
