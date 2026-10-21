@@ -145,3 +145,21 @@ body.driving .touch-controls button{border-radius:4px;background:linear-gradient
 /* 1.1.2 · peripheral helmet padding, more sky without changing the cockpit */
 body.cockpit-view .helmet-upper{height:23%;border-radius:0 0 13% 13%}body.cockpit-view .helmet-lower{height:21%;border-radius:15% 15% 0 0}body.cockpit-view .visor-reflection{inset:22% 0 20%;border-radius:12%/28%}
 @media(max-width:850px){body.cockpit-view .helmet-upper{height:24%}body.cockpit-view .helmet-lower{height:21%}body.cockpit-view .visor-reflection{inset:23% 0 20%}}
+
+/* preview.22 · instrument panel */
+.telemetry{background:radial-gradient(120% 90% at 50% 0%,#17353acc 0%,#0a161bee 58%,#060d11f4 100%)!important;border:1px solid #7fe3b833!important;box-shadow:0 18px 50px #0008,inset 0 1px 0 #ffffff17,inset 0 0 42px #2bd49a12!important;-webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2)}
+.telemetry::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,#ffffff0e,transparent 32%),repeating-linear-gradient(0deg,#ffffff05 0 1px,transparent 1px 3px)}
+.telemetry #rpm{display:none!important}
+.gauge-dial span{font:600 8px ui-monospace,Menlo,monospace!important;letter-spacing:.28em!important;color:#7fd9b2!important}
+.instruments .speed b{font-family:ui-monospace,Menlo,monospace!important;font-weight:700!important;color:#f1fff7;text-shadow:0 0 18px #4dffa955,0 0 2px #ffffff66;font-variant-numeric:tabular-nums}
+.instruments .speed span{color:#7fd9b2!important;letter-spacing:.42em!important}
+.telemetry .pedals>div{background:#ffffff12!important;border-radius:2px;overflow:hidden}
+#throttle-bar{background:linear-gradient(90deg,#2fd3a6,#b8f36a)!important;box-shadow:0 0 8px #5cf2a288}
+#brake-bar{background:linear-gradient(90deg,#ff7a59,#ff3c55)!important;box-shadow:0 0 8px #ff4d5e88}
+.telemetry .temps b{color:#e9fff4!important;font-variant-numeric:tabular-nums}
+@media (min-height:700px) and (min-width:901px){
+body.driving .telemetry .gauge-dial{height:104px;position:relative;overflow:hidden}
+body.driving .telemetry #speed-dial{display:block;position:absolute;left:0;top:14px;width:100%}
+body.driving .telemetry .instruments{margin-top:-4px;position:relative}
+body.driving .telemetry .instruments .speed{justify-content:center}
+}
