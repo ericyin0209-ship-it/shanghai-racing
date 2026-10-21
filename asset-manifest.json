@@ -1,16 +1,37 @@
 {
-  "version": "2.0.0-preview.19",
+  "version": "2.0.0-preview.20",
   "cars": [
     {
       "id": "green",
       "name": "Aston Martin AMR23",
-      "asset": "assets/models/amr23-r3.glb",
-      "sha256": "fedf7a923b9e691097c53fb982edcfbe8681ee407ce42fc2031189d12633e5b6",
-      "bytes": 29276980,
       "supplied_by": "user",
       "modifications": "R3 editable-source exterior reconstruction: continuous bodywork, thin multi-element wings, fitted atlas livery, baked carbon/rubber PBR, rigid suspension kinematics; original supplied GLB retained in the working project.",
       "reference": "F1 / Aston Martin AMR23 February 2023 launch gallery; photographic reconstruction, not factory CAD",
-      "source_file": "../AMR23-R3-Source/AMR23_R3.blend"
+      "source_file": "../AMR23-R3-Source/AMR23_R3.blend",
+      "source_glb": {
+        "path": "assets/models/amr23-r3.glb",
+        "sha256": "fedf7a923b9e691097c53fb982edcfbe8681ee407ce42fc2031189d12633e5b6",
+        "bytes": 29276980,
+        "note": "Original single-file GLB is kept in the working project, not in this web package."
+      },
+      "asset": "assets/models/amr23-r3.gltf",
+      "files": [
+        {
+          "path": "assets/models/amr23-r3.gltf",
+          "bytes": 1505331,
+          "sha256": "3cbca58ef3401de4b487886568c404217c352da4ea14fa8cf4306a97d5162768"
+        },
+        {
+          "path": "assets/models/amr23-r3-0.bin",
+          "bytes": 16767052,
+          "sha256": "3a19208189dff8ec6cdbe01a55a5bb605cfd4e6a015133a87508ab5fa8bd9bb6"
+        },
+        {
+          "path": "assets/models/amr23-r3-1.bin",
+          "bytes": 11004128,
+          "sha256": "6148431e73b9137e6b1e812e3745ca5405c9164ad635b6f359cc8dfcda5636d9"
+        }
+      ]
     }
   ],
   "environment_sources": [

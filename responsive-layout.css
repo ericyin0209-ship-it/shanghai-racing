@@ -92,3 +92,8 @@ body.driving.replay-mode .telemetry { bottom:110px!important; }
   body.driving .telemetry { width:190px; }
   body.driving .lap-panel { width:206px; }
 }
+
+/* preview.20: keep the dev performance readout off narrow phones; larger touch targets */
+@media (max-width:600px) { #performance-panel { display:none; } }
+@media (pointer:coarse) { header button, header select, .header-actions button, .header-actions select { min-height:40px; min-width:40px; } }
+#loading-retry { margin-top:14px; padding:10px 18px; background:#1d3a33; color:#e9f3ee; border:1px solid #9fd6bd66; border-radius:4px; font:inherit; cursor:pointer; }

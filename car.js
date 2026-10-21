@@ -4,7 +4,7 @@ import {brakeGlow} from './brake-thermal.js';
 import {createTyreCompounds} from './tyre-compounds.js';
 import {createVehicleSurface} from './vehicle-surface.js';
 import {skinSuspension} from './suspension-skin.js';
-import {createRearMirrors} from './rear-mirrors.js';
+import {createRearMirrors} from './rear-mirrors.js?v=222';
 import {createTyreDust} from './tyre-dust.js';
 import {createAMRSteering} from './steering-wheel.js';
 import * as THREE from 'three';

@@ -13,7 +13,7 @@ export function createTrackLighting(scene,track){
   const diffuser=new THREE.Mesh(lensGeometry,lens);diffuser.rotation.set(Math.PI/2,f.yaw,0,'YXZ');diffuser.position.set(f.p.x,11.995,f.p.z);diffuser.name='Single downward track lamp lens';root.add(diffuser);
   const target=track.at(index*track.length/48,0).p;fixtures.push({index,x:f.p.x,z:f.p.z,y:11.8,targetX:target.x,targetZ:target.z});
  }
- const lights=Array.from({length:Math.min(6,fixtures.length)},()=>{const light=new THREE.SpotLight('#ffe6c7',0,110,Math.PI*.40,.72,2);light.userData.dynamic=true;light.shadow.mapSize.set(1024,1024);light.shadow.focus=.65;light.shadow.bias=-.00002;light.shadow.normalBias=.004;light.shadow.autoUpdate=false;light.shadow.camera.near=.8;light.shadow.camera.far=150;scene.add(light,light.target);return light;});let amount=0,initialized=false;
+ const lights=Array.from({length:Math.min(6,fixtures.length)},()=>{const light=new THREE.SpotLight('#ffe6c7',0,110,Math.PI*.40,.72,2);light.userData.dynamic=true;light.shadow.mapSize.set(1024,1024);light.shadow.focus=.65;light.shadow.bias=-.00002;light.shadow.normalBias=.004;light.shadow.autoUpdate=false;light.shadow.camera.near=.8;light.shadow.camera.far=150;light.visible=false;scene.add(light,light.target);return light;});let amount=0,initialized=false;
  function update(focus,dt=.016){
   if(!lights.length||amount<=0)return;const candidates=fixtures.map(f=>({f,d:(f.x-focus.x)**2+(f.z-focus.z)**2})).sort((a,b)=>a.d-b.d).slice(0,lights.length).map(v=>v.f);const wanted=new Set(candidates.map(f=>f.index));const occupied=new Set();for(const light of lights)if(wanted.has(light.userData.fixtureIndex))occupied.add(light.userData.fixtureIndex);
   for(const light of lights){let fixture=fixtures.find(f=>f.index===light.userData.fixtureIndex);if(!fixture||!wanted.has(fixture.index)){const next=candidates.find(f=>!occupied.has(f.index));if(next&&(!initialized||light.intensity<30||Math.hypot(fixture.x-focus.x,fixture.z-focus.z)>140)){fixture=next;light.userData.fixtureIndex=fixture.index;light.intensity=0;light.position.set(fixture.x,fixture.y,fixture.z);light.target.position.set(fixture.targetX,0,fixture.targetZ);occupied.add(fixture.index);}}
@@ -22,5 +22,5 @@ export function createTrackLighting(scene,track){
   }initialized=true;
  }
 
- return {root,fixtures,lights,lensMaterial:lens,setNight(value){amount=Math.max(0,Math.min(1,value));lens.emissiveIntensity=amount*3.2;if(amount===0)for(const light of lights){light.intensity=0;light.castShadow=false;light.shadow.needsUpdate=false;}initialized=false;},update};
+ return {root,fixtures,lights,lensMaterial:lens,setNight(value){amount=Math.max(0,Math.min(1,value));lens.emissiveIntensity=amount*3.2;for(const light of lights)light.visible=amount>0;if(amount===0)for(const light of lights){light.intensity=0;light.castShadow=false;light.shadow.needsUpdate=false;}initialized=false;},update};
 }
