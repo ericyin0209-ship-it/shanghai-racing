@@ -126,3 +126,7 @@ R3 图集中的 Cognizant、Aramco、Aston Martin 与 BOSS 图形来自现有工
 ## Map environment revision 218 — 2026-10-20
 
 Procedural reconstruction informed by Tilke Architecture Portfolio (2025), https://tilke.de/wp-content/uploads/2025/05/2025-Tilke-Portfolio-Architecture-LQ-1.pdf ; Formula 1 Shanghai feature and site photographs, https://www.formula1.com/en/latest/article/why-we-love-the-chinese-grand-prix.3AqunaR9kFuH2D2dWG8wqJ ; Shanghai venue map, https://english.shanghai.gov.cn/assets/Download/Shanghai%20International%20Circuit%20Map.pdf . No photographs from these sources are embedded as game textures. Existing mapped footprints and source attribution retained. Architectural dimensions and minor fixtures are photographic/engineering estimates, not a surveyed or CAD-certified 1:1 replica.
+
+## Lighting and weather revision 221 — 2026-10-20
+
+Procedural cloud density atlas, weather finishes, rain streaks, wet reflections and HDR finishing authored for this simulator. Existing CC0 sky/HDR assets and their attribution are retained; no new third-party image or audio assets are embedded. Uses the bundled Three.js renderer, PMREM and Reflector APIs; API references: https://threejs.org/docs/pages/RenderTarget.html ; https://threejs.org/docs/pages/PMREMGenerator.html . Weather and illumination are visual engineering approximations, not a meteorological simulation or path-traced rendering.

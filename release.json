@@ -1,10 +1,10 @@
 {
-  "version": "2.0.0-preview.17",
+  "version": "2.0.0-preview.19",
   "channel": "web-preview",
   "nativeIncluded": false,
   "telemetryUpload": false,
   "displayName": "VERTEX 极点",
   "carAsset": "AMR23-R3",
   "publication": "not uploaded",
-  "accountServices": "unconfigured; guest mode available; OAuth not live-tested"
+  "accountServices": "disabled; direct game entry; local driving archive retained"
 }

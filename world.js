@@ -1,34 +1,39 @@
+import {weatherLighting,weatherMistRGB} from './weather-state.js?v=221';
+import {weatherNoise} from './weather-noise.js?v=221';
+import {createWeatherSurfaces} from './weather-surfaces.js?v=221';
+import {createWetReflection} from './wet-reflection.js?v=221';
+import {createWeatherRain} from './weather-rain.js?v=221';
 import {optimizeEnvironmentBatches} from './environment-batching.js?v=218i';
 import {createKerbSurfaces} from './circuit-kerbs.js?v=218i';
 import {createCircuitLandmarks} from './circuit-landmarks.js?v=218i';
 import {createTrackEnvironment,formedRailGeometry} from './circuit-track-detail.js?v=218i';
-import {createPaddockDetail} from './circuit-paddock.js?v=218i';
+import {createPaddockDetail} from './circuit-paddock.js?v=221';
 import {constructionFinish} from './circuit-surface.js?v=218i';
 import {fitStandToStraight} from './stand-alignment.js?v=216';
 import {createSceneDetail} from './scene-detail.js?v=218i';
-import {createTrackLighting} from './track-lighting.js';
+import {createTrackLighting} from './track-lighting.js?v=221';
 import {batchStaticMeshes} from './static-batching.js';
 import {snapShadowFocus} from './shadow-focus.js';
 import {createLotusGrandstands} from './lotus-grandstands.js?v=218i';
 import {createPitArchitecture} from './pit-architecture.js';
-import {waterRippleGLSL} from './water-ripples.js?v=215c';
+import {waterRippleGLSL} from './water-ripples.js?v=221';
 import {createCircuitEnvelope,capturePitVista} from './circuit-envelope.js?v=218i';
 import {partitionStaticInstances} from './spatial-batches.js?v=218i';
 import {createCircuitLifeDetail} from './circuit-livedetail.js?v=218i';
 import * as THREE from 'three';
 import {addGroundVariation} from './terrain-shading.js';
-import {createRainImpacts} from './rain-impact.js';
+import {createRainImpacts} from './rain-impact.js?v=221';
 import {createCircuitArchitecture} from './circuit-architecture.js?v=218i';
 import {Sky} from './vendor/Sky.js';
 import {Reflector} from './vendor/Reflector.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {createSurroundings} from './surroundings.js?v=218i';
+import {createSurroundings} from './surroundings.js?v=221';
 import {createCircuitDetailUpgrade} from './circuit-detail-upgrade.js?v=216';
 import {createTracksideDetails} from './trackside-details.js?v=216';
 import {createFoliage} from './foliage.js';
 import {createCircuitFinish} from './circuit-finish.js?v=218i';
-import {createAtmosphere} from './atmosphere.js';
+import {createAtmosphere} from './atmosphere.js?v=221';
 import {solarPosition,clamp} from './physics.js';
 function seeded(seed=38){return ()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
 function texture(size,draw,repeat=1){const c=document.createElement('canvas');c.width=c.height=size;draw(c.getContext('2d'),size);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(repeat,repeat);return t;}
@@ -38,11 +43,11 @@ export async function createWorld(scene,renderer,track){
   const loader=new THREE.TextureLoader();
   const [asphaltTex,asphaltNormal,asphaltRoughness,hdr]=await Promise.all([loader.loadAsync('assets/textures/asphalt-color.jpg'),loader.loadAsync('assets/textures/asphalt-normal.jpg'),loader.loadAsync('assets/textures/asphalt-roughness.jpg'),new HDRLoader().loadAsync('assets/textures/outdoor.hdr')]);
   asphaltTex.colorSpace=THREE.SRGBColorSpace;for(const t of [asphaltTex,asphaltNormal,asphaltRoughness]){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=renderer.capabilities.getMaxAnisotropy();}
-  const outdoorGenerator=new THREE.PMREMGenerator(renderer),outdoorEnv=outdoorGenerator.fromEquirectangular(hdr);outdoorGenerator.dispose();
+  const surfaceNoise=weatherNoise().surface;
   const freshAsphalt=texture(1024,(c,s)=>{const image=c.createImageData(s,s);for(let i=0;i<s*s;i++){const value=69+random()*22+(random()<.025?25:0);image.data[i*4]=value;image.data[i*4+1]=value+1;image.data[i*4+2]=value+2;image.data[i*4+3]=255;}c.putImageData(image,0,0);});freshAsphalt.anisotropy=renderer.capabilities.getMaxAnisotropy();
   const asphalt=new THREE.MeshPhysicalMaterial({color:'#b0b0b0',map:freshAsphalt,normalMap:asphaltNormal,normalScale:new THREE.Vector2(.11,.11),roughnessMap:asphaltRoughness,roughness:1,metalness:.02,clearcoat:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2});
-  const dryPixels=new Uint8Array(track.n*4),dryTexture=new THREE.DataTexture(dryPixels,track.n,1,THREE.RGBAFormat);dryTexture.minFilter=dryTexture.magFilter=THREE.LinearFilter;dryTexture.wrapS=THREE.RepeatWrapping;dryTexture.needsUpdate=true;const wetUniform={value:0},waterClock={value:0};asphalt.onBeforeCompile=shader=>{shader.uniforms.waterClock=waterClock;shader.uniforms.roadWet=wetUniform;shader.uniforms.dryTrail={value:dryTexture};shader.uniforms.circuitLength={value:track.length};shader.vertexShader='varying vec3 wetRoadPoint;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nwetRoadPoint=(modelMatrix*vec4(transformed,1.)).xyz;');shader.fragmentShader='varying vec3 wetRoadPoint;\n'+waterRippleGLSL+'\nuniform sampler2D dryTrail;uniform float circuitLength;uniform float roadWet;uniform float waterClock;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nfloat ss=vMapUv.y/.15,oo=vMapUv.x/.15;float broad=.5+.5*sin(ss*.039+sin(ss*.013)*2.)*sin(oo*1.7+ss*.011);float fine=.5+.5*sin(ss*.31+oo*3.4)*sin(ss*.097-oo*1.9);float waterPatch=smoothstep(.36,.82,broad*.76+fine*.24);vec4 trail=texture2D(dryTrail,vec2(fract(ss/circuitLength),.5));float dryOff=trail.g*20.-10.;float localWet=max(0.,roadWet-trail.r*exp(-pow(oo-dryOff,2.)/5.));roughnessFactor*=.94+.06*sin(ss*.9+oo*4.);roughnessFactor=mix(roughnessFactor,max(.22,roughnessFactor*.65),localWet*waterPatch);diffuseColor.rgb*=1.-localWet*.17;');shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
- vec2 waterSlope=rainWaterSlope(wetRoadPoint.xz,waterClock,localWet);
+  const dryPixels=new Uint8Array(track.n*4),dryTexture=new THREE.DataTexture(dryPixels,track.n,1,THREE.RGBAFormat);dryTexture.minFilter=dryTexture.magFilter=THREE.LinearFilter;dryTexture.wrapS=THREE.RepeatWrapping;dryTexture.needsUpdate=true;const wetUniform={value:0},waterClock={value:0},rainEnergy={value:0};asphalt.onBeforeCompile=shader=>{shader.uniforms.waterClock=waterClock;shader.uniforms.rainEnergy=rainEnergy;shader.uniforms.surfaceNoise={value:surfaceNoise};shader.uniforms.roadWet=wetUniform;shader.uniforms.dryTrail={value:dryTexture};shader.uniforms.circuitLength={value:track.length};shader.vertexShader='varying vec3 wetRoadPoint;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nwetRoadPoint=(modelMatrix*vec4(transformed,1.)).xyz;');shader.fragmentShader='varying vec3 wetRoadPoint;\n'+waterRippleGLSL+'\nuniform sampler2D dryTrail,surfaceNoise;uniform float rainEnergy;uniform float circuitLength;uniform float roadWet;uniform float waterClock;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nfloat ss=vMapUv.y/.15,oo=vMapUv.x/.15;vec2 wetNoise=texture2D(surfaceNoise,wetRoadPoint.xz*.013).rg;float waterPocket=.5+.5*sin(ss*.039+sin(ss*.013)*2.)*sin(oo*1.7+ss*.011);float waterPatch=smoothstep(.38,.78,waterPocket*.55+wetNoise.r*.30+wetNoise.g*.15);vec4 trail=texture2D(dryTrail,vec2(fract(ss/circuitLength),.5));float dryOff=trail.g*20.-10.;float localWet=max(0.,roadWet-trail.r*exp(-pow(oo-dryOff,2.)/5.));roughnessFactor*=.94+wetNoise.g*.06;roughnessFactor=mix(roughnessFactor,max(.13,roughnessFactor*.40),localWet*waterPatch);diffuseColor.rgb*=1.-localWet*.17;');shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+ vec2 waterSlope=rainWaterSlope(wetRoadPoint.xz,waterClock,localWet*rainEnergy);
  normal=normalize(normal+mat3(viewMatrix)*vec3(waterSlope.x,0.,waterSlope.y)*.072);
  
  `);};
@@ -149,31 +154,16 @@ box(.25,.8,.28,-35.4,1.4,z+5.9,new THREE.MeshStandardMaterial({color:'#b62e33',r
   scene.fog=new THREE.FogExp2('#b7c3bd',.00015);
   const pmrem=new THREE.PMREMGenerator(renderer),envScene=new THREE.Scene(),envSky=new Sky();envSky.scale.setScalar(9000);envScene.add(envSky);envSky.visible=false;const reflectionAtmosphere=createAtmosphere(envScene,hdr);
   const mirrorGeometry=track.ribbon(-7.18,7.18,.006);mirrorGeometry.rotateX(Math.PI/2);
-  const mirror=new Reflector(mirrorGeometry,{textureWidth:2048,textureHeight:2048,color:'#7c8a91',clipBias:.004});
-  mirror.camera.userData.reflectionView=true;mirror.rotation.x=-Math.PI/2;mirror.position.set(0,.035,0);mirror.material.transparent=true;mirror.material.depthWrite=false;mirror.material.polygonOffset=true;mirror.material.polygonOffsetFactor=-1;mirror.material.polygonOffsetUnits=-3;
-  mirror.material.fragmentShader=mirror.material.fragmentShader.replace('gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );','float waterPatch=.5+.5*sin(vUv.x*17.0+sin(vUv.y*1.7))*sin(vUv.y*5.3);gl_FragColor = vec4( blendOverlay( base.rgb, color ), (.035+waterPatch*.21)*pow(1.-abs(normalize(cameraPosition-roadPoint).y),2.) );');
-  mirror.material.vertexShader=mirror.material.vertexShader.replace('varying vec4 vUv;','varying vec4 vUv; varying vec3 roadPoint;').replace('vUv = textureMatrix','roadPoint=(modelMatrix*vec4(position,1.0)).xyz; vUv = textureMatrix');mirror.material.fragmentShader=mirror.material.fragmentShader.replace('varying vec4 vUv;','varying vec4 vUv; varying vec3 roadPoint;').replace('vUv.x*17.0+sin(vUv.y*1.7)','roadPoint.x*.42+sin(roadPoint.z*.15)').replace('vUv.y*5.3','roadPoint.z*.32');
-  mirror.material.uniforms.waterClock=waterClock;mirror.material.uniforms.roadWet=wetUniform;mirror.material.uniforms.dryTrail={value:dryTexture};mirror.material.uniforms.circuitLength={value:track.length};
-  mirror.material.vertexShader='varying vec2 roadUv;\n'+mirror.material.vertexShader;
-  mirror.material.vertexShader=mirror.material.vertexShader.replace('void main() {','void main() { roadUv=uv;');
-  mirror.material.fragmentShader='varying vec2 roadUv; uniform float roadWet;uniform sampler2D dryTrail;uniform float circuitLength;\n'+mirror.material.fragmentShader;
-  mirror.material.fragmentShader=mirror.material.fragmentShader.replace('float waterPatch=.5+.5*sin(roadPoint.x*.42+sin(roadPoint.z*.15))*sin(roadPoint.z*.32);','float s=roadUv.y/.15,o=roadUv.x/.15;float broad=.5+.5*sin(s*.039+sin(s*.013)*2.)*sin(o*1.7+s*.011);float fine=.5+.5*sin(s*.31+o*3.4)*sin(s*.097-o*1.9);float waterPatch=smoothstep(.36,.82,broad*.76+fine*.24);');
-  mirror.material.fragmentShader=mirror.material.fragmentShader.replace('(.035+waterPatch*.21)','max(0.,roadWet-texture2D(dryTrail,vec2(fract(s/circuitLength),.5)).r*exp(-pow(o-(texture2D(dryTrail,vec2(fract(s/circuitLength),.5)).g*20.-10.),2.)/5.))*(.005+waterPatch*.075)');
-  mirror.material.fragmentShader=waterRippleGLSL+'\nuniform float waterClock;\n'+mirror.material.fragmentShader;
-  mirror.material.fragmentShader=mirror.material.fragmentShader.replace('vec4 base = texture2DProj( tDiffuse, vUv );',`vec4 distorted=vUv;vec2 waterSlope=rainWaterSlope(roadPoint.xz,waterClock,roadWet);vec2 screenSlope=vec2(dot(dFdx(roadPoint.xz),waterSlope),dot(dFdy(roadPoint.xz),waterSlope));distorted.xy+=screenSlope*.012*vUv.w;vec4 base=texture2DProj(tDiffuse,distorted);`);
-  const reflect=mirror.onBeforeRender,reflectionSize=new THREE.Vector2();let lastReflection=-1000;mirror.onBeforeRender=function(...args){const renderer=args[0],now=performance.now();if(now-lastReflection<16)return;lastReflection=now;renderer.getDrawingBufferSize(reflectionSize);const scale=Math.min(1,(renderer.getPixelRatio()>1.4?3072:2048)/Math.max(reflectionSize.x,reflectionSize.y)),width=Math.max(256,Math.ceil(reflectionSize.x*scale/32)*32),height=Math.max(256,Math.ceil(reflectionSize.y*scale/32)*32),target=mirror.getRenderTarget();if(target.width!==width||target.height!==height)target.setSize(width,height);reflect.apply(this,args);};
-  mirror.visible=false;mirror.userData.dynamic=true;scene.add(mirror);
-  const rainCount=2600,rainPositions=new Float32Array(rainCount*6),rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
-  for(let i=0;i<rainCount;i++){const j=i*6,x=(random()-.5)*100,z=(random()-.5)*100,y=random()*34;rainPositions[j]=x;rainPositions[j+1]=y;rainPositions[j+2]=z;rainPositions[j+3]=x+.12;rainPositions[j+4]=y-.9;rainPositions[j+5]=z+.16;}
-  const ends=new Float32Array(rainCount*2);for(let i=0;i<rainCount;i++)ends[i*2+1]=1;rainGeo.setAttribute('rainEnd',new THREE.BufferAttribute(ends,1));const rainMaterial=new THREE.LineBasicMaterial({color:'#b8ccd3',transparent:true,opacity:.29,depthWrite:false});rainMaterial.onBeforeCompile=shader=>{shader.uniforms.rainClock=waterClock;shader.vertexShader='uniform float rainClock;attribute float rainEnd;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.y=mod(position.y+.9*rainEnd-rainClock*24.,34.)-.9*rainEnd;');};const rain=new THREE.LineSegments(rainGeo,rainMaterial);rain.frustumCulled=false;scene.add(rain);
+  const wetReflection=createWetReflection(mirrorGeometry,{wet:wetUniform,clock:waterClock,rain:rainEnergy,trail:dryTexture,length:track.length,noise:surfaceNoise}),mirror=wetReflection.mirror;mirror.visible=false;scene.add(mirror);
+  const rainfall=createWeatherRain(scene,waterClock,standAxis.matrix);
   const environmentCache=new Map();
-  let exposure=.95,currentHour=12.5,currentWeather='clear',wetness=0,targetWet=0,lastEnv=null,cloudiness=0;
+  let exposure=.95,currentHour=12.5,currentWeather='clear',wetness=0,targetWet=0,lastEnv=null,cloudiness=0,lighting=weatherLighting('clear',12.5);
   const sunDirection=new THREE.Vector3();
   function setEnvironment(weather,hour){
     if(lastEnv&&currentWeather===weather&&currentHour===+hour)return {weather,hour,targetWet};
     currentWeather=weather;currentHour=+hour;sun.shadow.needsUpdate=true;
-    const values={clear:[0,0],cloudy:[.35,0],overcast:[.8,0],rain:[.9,.58],storm:[1,1]};[cloudiness,targetWet]=values[weather];
-    const solar=solarPosition(currentHour),[dx,dz]=track.data.axis;
+    lighting=weatherLighting(weather,hour);cloudiness=lighting.cloud;targetWet=lighting.wet;
+    const solar=lighting.solar,[dx,dz]=track.data.axis;
     sunDirection.set(solar.east*dz+solar.north*dx,solar.up,solar.east*dx-solar.north*dz).normalize();
     const day=clamp(solar.up*3,0,1),twilight=clamp((solar.up+.16)*4,0,1);
     sky.material.uniforms.turbidity.value=2+cloudiness*12;
@@ -181,28 +171,28 @@ box(.25,.8,.28,-35.4,1.4,z+5.9,new THREE.MeshStandardMaterial({color:'#b62e33',r
     sky.material.uniforms.mieCoefficient.value=.005+cloudiness*.035;
     sky.material.uniforms.mieDirectionalG.value=.80;
     sky.material.uniforms.sunPosition.value.copy(sunDirection);
-    sun.castShadow=day>.02;sun.color.set(solar.up<.3?'#ffd2a0':'#fff1dd');sun.intensity=day*(3.4*Math.pow(1-cloudiness,2)+.05*cloudiness);
-    hemi.intensity=.46+twilight*(.36+cloudiness*.30);moon.intensity=(1-twilight)*.55;atmosphere.set(day,twilight,cloudiness,sunDirection);reflectionAtmosphere.set(day,twilight,cloudiness,sunDirection);context.setNight?.(1-twilight);landmarks.setNight(1-twilight);paddockDetail.setNight(1-twilight);architecture.setNight(1-twilight);lifeDetail.setNight(1-twilight);for(const m of buildingGlow)m.emissiveIntensity=(1-twilight)*2.8;
-    scene.fog.color.set(currentWeather==='storm'?'#758791':day>.5?'#b8c7cb':twilight>.2?'#a7a192':'#172330');
-    scene.fog.density=.00010+cloudiness*cloudiness*.00045;
-    exposure=1.12-twilight*.15;
-    trackLighting.setNight(1-twilight);architectural.intensity=(1-twilight)*2500;
+    sun.castShadow=day>.02;sun.color.set(solar.up<.3?'#ffd2a0':'#fff1dd');sun.intensity=lighting.sunIntensity;
+    hemi.intensity=lighting.hemiIntensity;hemi.groundColor.set('#50564c');moon.intensity=lighting.moonIntensity;atmosphere.set(day,twilight,cloudiness,sunDirection);reflectionAtmosphere.set(day,twilight,cloudiness,sunDirection);context.setNight?.(1-twilight);landmarks.setNight(1-twilight);paddockDetail.setNight(1-twilight);architecture.setNight(1-twilight);lifeDetail.setNight(1-twilight);for(const m of buildingGlow)m.emissiveIntensity=(1-twilight)*2.8;
+    const mistColour=new THREE.Color().setRGB(...weatherMistRGB(lighting));
+    scene.fog.color.copy(mistColour);scene.fog.density=lighting.fogDensity;
+    scene.userData.weatherState={...lighting,mistColour,sunDirection:sunDirection.clone()};
+    weatherSurfaces.update(targetWet,waterClock.value,lighting,sunDirection);exposure=lighting.exposure;trackLighting.setNight(lighting.night);architectural.intensity=lighting.night*1700;wetReflection.invalidate();
     for(const key of ['turbidity','rayleigh','mieCoefficient','mieDirectionalG'])envSky.material.uniforms[key].value=sky.material.uniforms[key].value;
     envSky.material.uniforms.sunPosition.value.copy(sunDirection);
-    const cacheKey=currentWeather+':'+currentHour;let cached=environmentCache.get(cacheKey);if(!cached){cached=currentWeather==='clear'&&currentHour>=9&&currentHour<=16?outdoorEnv:pmrem.fromScene(envScene,.04,.5,5000);if(environmentCache.size>=20){const key=environmentCache.keys().next().value,old=environmentCache.get(key);if(old!==outdoorEnv)old.dispose();environmentCache.delete(key);}environmentCache.set(cacheKey,cached);}lastEnv=cached;scene.environment=cached.texture;
-    scene.environmentIntensity=.32+twilight*.50;
+    const cacheKey=currentWeather+':'+Math.round(currentHour*12);let cached=environmentCache.get(cacheKey);if(!cached){reflectionAtmosphere.uniforms.clock.value=atmosphere.uniforms.clock.value;cached=pmrem.fromScene(envScene,.015,.5,5000);if(environmentCache.size>=8){const key=environmentCache.keys().next().value;environmentCache.get(key).dispose();environmentCache.delete(key);}environmentCache.set(cacheKey,cached);}lastEnv=cached;scene.environment=cached.texture;
+    scene.environmentIntensity=lighting.environmentIntensity;
     return {weather,hour,solar,targetWet};
   }
   const lightCenter=new THREE.Vector3();
   function update(dt,focus){
     atmosphere.update(dt,focus);waterClock.value+=Math.max(0,dt);
     wetness+=(targetWet-wetness)*Math.min(1,dt*(targetWet>wetness?.18:.035));
-    track.updateWater(dt,wetness,focus);let changed=false;for(let i=0;i<track.n;i++){const red=Math.round(track.drying[i]*255),green=Math.round((track.dryOffsets[i]+10)/20*255),j=i*4;if(dryPixels[j]!==red||dryPixels[j+1]!==green||dryPixels[j+3]!==255){dryPixels[j]=red;dryPixels[j+1]=green;dryPixels[j+3]=255;changed=true;}}if(changed)dryTexture.needsUpdate=true;wetUniform.value=wetness;landmarks.setWetness(wetness);kerbs.setWetness(wetness);context.setWater?.(waterClock.value);paddockDetail.updateTime(waterClock.value);asphalt.roughness=1-wetness*.18;asphalt.clearcoat=wetness*.12;asphalt.clearcoatRoughness=.32;white.roughness=.78-wetness*.45;red.roughness=.6-wetness*.36;asphalt.color.setRGB(.72-wetness*.30,.72-wetness*.30,.72-wetness*.30);
-    mirror.visible=wetness>.12;
-    const intensity=currentWeather==='storm'?1:currentWeather==='rain'?.48:0;rainImpacts.update(dt,focus,wetness,intensity,waterClock.value);rain.visible=intensity>0;rainGeo.setDrawRange(0,Math.round(rainCount*2*intensity));rain.position.set(focus.x,0,focus.z);
+    track.updateWater(dt,wetness,focus);let changed=false;for(let i=0;i<track.n;i++){const red=Math.round(track.drying[i]*255),green=Math.round((track.dryOffsets[i]+10)/20*255),j=i*4;if(dryPixels[j]!==red||dryPixels[j+1]!==green||dryPixels[j+3]!==255){dryPixels[j]=red;dryPixels[j+1]=green;dryPixels[j+3]=255;changed=true;}}if(changed)dryTexture.needsUpdate=true;wetUniform.value=wetness;landmarks.setWetness(wetness);kerbs.setWetness(wetness);context.setWater?.(waterClock.value,lighting.cloud);paddockDetail.updateTime(waterClock.value,lighting.cloud);asphalt.roughness=1-wetness*.20;asphalt.clearcoat=wetness*.28;asphalt.clearcoatRoughness=.16;white.roughness=.78-wetness*.45;red.roughness=.6-wetness*.36;asphalt.color.setRGB(.72-wetness*.30,.72-wetness*.30,.72-wetness*.30);
+    mirror.visible=wetness>.12;weatherSurfaces.update(wetness,waterClock.value,lighting,sunDirection);rainEnergy.value+=(lighting.rain-rainEnergy.value)*Math.min(1,Math.max(0,dt)*2.5);if(dt===0)rainEnergy.value=lighting.rain;
+    const intensity=lighting.rain;rainImpacts.update(dt,focus,wetness,intensity,waterClock.value);
 
     const center=lightCenter.set(focus.x,0,focus.z);snapShadowFocus(center,sunDirection,sun.shadow.camera.right-sun.shadow.camera.left,sun.shadow.mapSize.x,center);if(center.distanceToSquared(sun.target.position)>1e-10||(dt>0&&Number.isFinite(focus.speed)))sun.shadow.needsUpdate=true;sun.target.position.copy(center);sun.position.copy(center).addScaledVector(sunDirection,350);
-    trackLighting.update(focus);
+    trackLighting.update(focus,dt);rainfall.update(focus,lighting,renderer,trackLighting.lights);
     return {wetness,rain:intensity,hour:currentHour,weather:currentWeather};
   }
   const tracksideDetails=createTracksideDetails(scene,track);const detailUpgrade=createCircuitDetailUpgrade(scene,track);
@@ -212,10 +202,11 @@ box(.25,.8,.28,-35.4,1.4,z+5.9,new THREE.MeshStandardMaterial({color:'#b62e33',r
   const architectureBatches=batchStaticMeshes(scene,80);
   const spatialStats=partitionStaticInstances(scene);
   const vistaInstances=optimizeEnvironmentBatches(pitVista,100);const vistaBatches=batchStaticMeshes(pitVista,60);partitionStaticInstances(pitVista,60);const detail=createSceneDetail(scene),vistaDetail=createSceneDetail(pitVista);
+  const weatherSurfaces=createWeatherSurfaces([scene,pitVista],{exclude:[asphalt]});pitVista.userData.updateWeather=dt=>{waterClock.value+=Math.max(0,dt);weatherSurfaces.update(targetWet,waterClock.value,lighting,sunDirection);};const otherReflectors=[];scene.traverse(o=>{if(o.isReflector)otherReflectors.push(o);});wetReflection.setPeers(otherReflectors);
   function updateDetail(camera,height,trackView=true,driving=false){if(trackView)paddockDetail.prepare(camera,!driving);const controller=trackView?detail:vistaDetail,before=controller.stats.changes,result=controller.update(camera,height);if(trackView){const half=camera.position.y>80?256:32,c=sun.shadow.camera;if(c.right!==half){c.left=c.bottom=-half;c.right=c.top=half;c.updateProjectionMatrix();sun.shadow.needsUpdate=true;}if(result.changes!==before)sun.shadow.needsUpdate=true;}return result;}const detailStats={world:detail.stats,vista:vistaDetail.stats};
   setEnvironment('clear',12.5);
   function resetConditions(){wetness=targetWet;track.drying.fill(0);track.dryOffsets.fill(0);track.updateWater(0,wetness);}
   function captureConditions(full=false){const state={weather:currentWeather,hour:currentHour,wetness,waterTime:waterClock.value};if(full){state.drying=track.drying.slice();state.dryOffsets=track.dryOffsets.slice();}return state;}
   function restoreConditions(state,a=state,b=a,u=0){setEnvironment(state.weather,state.hour);wetness=state.wetness;waterClock.value=state.waterTime;if(a.drying)for(let i=0;i<track.n;i++){track.drying[i]=a.drying[i]+((b.drying?.[i]??a.drying[i])-a.drying[i])*u;track.dryOffsets[i]=a.dryOffsets[i]+((b.dryOffsets?.[i]??a.dryOffsets[i])-a.dryOffsets[i])*u;}track.updateWater(0,wetness);}
-  return {environmentBatches,vistaInstances,kerbs,landmarks,edgeDetail,paddockDetail,standAxis,standAssembly,updateDetail,detailStats,pitVista,standEnvelope,trackLighting,vistaBatches,architectureBatches,setEnvironment,resetConditions,captureConditions,restoreConditions,spatialStats,lifeDetail,update,sun,context,tracksideDetails,get exposure(){return exposure;},get wetness(){return wetness;},get targetWet(){return targetWet;},signalMaterials,road,asphalt,sky,architecture,rainImpacts};
+  return {weatherSurfaces,wetReflection,atmosphere,rainfall,environmentBatches,vistaInstances,kerbs,landmarks,edgeDetail,paddockDetail,standAxis,standAssembly,updateDetail,detailStats,pitVista,standEnvelope,trackLighting,vistaBatches,architectureBatches,setEnvironment,resetConditions,captureConditions,restoreConditions,spatialStats,lifeDetail,update,sun,context,tracksideDetails,get exposure(){return exposure;},get wetness(){return wetness;},get targetWet(){return targetWet;},signalMaterials,road,asphalt,sky,architecture,rainImpacts};
 }

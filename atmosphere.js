@@ -1,25 +1,27 @@
 import * as THREE from 'three';
-// Photographic CC0 sky combined with a weather layer; this is not volumetric meteorology.
+import {weatherNoise,cloudVolumeGLSL} from './weather-noise.js?v=221';
+// A shared, periodic density atlas replaces per-fragment multi-octave hash noise.
+// Twelve slab samples and local sunlight probes resolve cloud thickness and silver edges.
 export function createAtmosphere(scene,hdr){
- const uniforms={skyPhoto:{value:hdr},day:{value:1},twilight:{value:1},cloudCover:{value:0},clock:{value:0},sunDirection:{value:new THREE.Vector3(0,1,0)}};
- const material=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms,vertexShader:`varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,fragmentShader:`
- varying vec3 direction;uniform sampler2D skyPhoto;uniform float day,twilight,cloudCover,clock;uniform vec3 sunDirection;
- float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
- float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
- float layers(vec2 p){return noise(p)*.57+noise(p*2.03)*.28+noise(p*4.07)*.15;}
- float n3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);float a=mix(mix(hash(i.xy+i.z*37.),hash(i.xy+vec2(1,0)+i.z*37.),f.x),mix(hash(i.xy+vec2(0,1)+i.z*37.),hash(i.xy+1.+i.z*37.),f.x),f.y);float b=mix(mix(hash(i.xy+(i.z+1.)*37.),hash(i.xy+vec2(1,0)+(i.z+1.)*37.),f.x),mix(hash(i.xy+vec2(0,1)+(i.z+1.)*37.),hash(i.xy+1.+(i.z+1.)*37.),f.x),f.y);return mix(a,b,f.z);}
- vec2 cloudVolume(vec3 d){if(d.y<.025||cloudCover<.1)return vec2(0);float t0=750./d.y,t1=1250./d.y,stepSize=(t1-t0)/8.;float transmission=1.,light=0.;for(int i=0;i<8;i++){vec3 p=d*(t0+(float(i)+.5)*stepSize);p.xz+=vec2(clock*3.,clock*.8);vec3 q=p*.0017;float f=n3(q)*.58+n3(q*2.07)*.28+n3(q*4.1)*.14;float height=sin(clamp((p.y-750.)/500.,0.,1.)*3.14159);float density=max(0.,f-(.69-cloudCover*.28))*height;float absorb=1.-exp(-density*stepSize*.0028);light+=transmission*absorb*(.50+.5*height);transmission*=1.-absorb;}return vec2(1.-transmission,light);}
- void main(){vec3 d=normalize(direction);vec2 uv=vec2(atan(d.z,d.x)/6.2831853+.5,asin(clamp(d.y,-1.0,1.0))/3.14159265+.5);
- vec3 photo=texture2D(skyPhoto,uv+vec2(clock*.000002,0)).rgb;photo=min(photo*1.6,vec3(3.0));
- float high=smoothstep(-.02,.7,d.y);vec3 clear=mix(vec3(.29,.49,.73),vec3(.075,.22,.50),high);vec3 natural=mix(clear,photo*vec3(.90,1.01,1.12),.76);
- vec2 p=d.xz/max(.2,d.y+.28)*2.2+vec2(clock*.0015,clock*.00045);float shape=layers(p);float cloud=smoothstep(.72-cloudCover*.49,.88-cloudCover*.40,shape)*smoothstep(-.08,.14,d.y)*cloudCover;
- vec3 overcast=mix(vec3(.34,.40,.46),vec3(.76,.79,.81),shape);vec2 volume=cloudVolume(d);overcast=mix(vec3(.22,.28,.34),vec3(.77,.80,.82),volume.y/max(.001,volume.x));natural=mix(natural,overcast,max(cloud*.30,volume.x));natural=mix(natural,natural*.68,cloudCover*.65);
- float rainDeck=smoothstep(.64,1.,cloudCover);vec3 denseSky=mix(vec3(.19,.235,.275),vec3(.43,.47,.50),clamp(shape*.85+volume.y*.35,0.,1.));natural=mix(natural,denseSky,rainDeck*.96);
- float sunset=(1.0-day)*twilight;float toward=pow(max(dot(d,normalize(vec3(sunDirection.x,.02,sunDirection.z))),0.0),3.0);natural=mix(natural,natural*vec3(1.55,.77,.47)+vec3(.07,.014,0),sunset*(.25+.65*toward));
- vec3 night=vec3(.014,.025,.052)+photo*.011;float moon=pow(max(dot(d,normalize(vec3(.32,.82,.31))),0.0),1400.0);night+=vec3(.42,.48,.58)*moon*(1.0-cloudCover*.75);
- float star=step(.99984,hash(floor(uv*vec2(1400,700))))*smoothstep(.08,.4,d.y);night+=vec3(.08)*star*(1.0-cloudCover);
- vec3 color=mix(night,natural,twilight);float haze=1.0-smoothstep(-.07,.10,d.y);color=mix(color,mix(vec3(.025,.042,.065),vec3(.39,.48,.56),twilight),haze*.45);
- gl_FragColor=vec4(color,1.0);#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}`.replace('//#','\n#').replace(';#include',';\n#include')});
- const dome=new THREE.Mesh(new THREE.SphereGeometry(2800,64,32),material);dome.name='Photographic sky and moving weather';dome.userData.dynamic=true;dome.frustumCulled=false;scene.add(dome);
- return {dome,set(day,twilight,cloudCover,sun){uniforms.day.value=day;uniforms.twilight.value=twilight;uniforms.cloudCover.value=cloudCover;uniforms.sunDirection.value.copy(sun);},update(dt,focus){uniforms.clock.value+=dt;dome.position.set(focus.x,0,focus.z);}};
+ const uniforms={skyPhoto:{value:hdr},cloudAtlas:{value:weatherNoise().volume},day:{value:1},twilight:{value:1},cloudCover:{value:0},clock:{value:0},flash:{value:0},sunDirection:{value:new THREE.Vector3(0,1,0)}};
+ const material=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,uniforms,vertexShader:'varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:`
+ varying vec3 direction;uniform sampler2D skyPhoto,cloudAtlas;uniform float day,twilight,cloudCover,clock,flash;uniform vec3 sunDirection;
+ ${cloudVolumeGLSL}
+ float densityAt(vec3 p){float h=(p.y-850.)/800.;float vertical=smoothstep(0.,.13,h)*(1.-smoothstep(.60,1.,h));vec3 q=p*vec3(.00043,.00042,.00043)+vec3(clock*.00033,0.,clock*.00010);vec3 n=cloudNoise(q);float density=max(0.,n.r-(.61-cloudCover*.27));density=max(0.,density-(1.-n.g)*.035);return density*vertical*3.4;}
+ void main(){vec3 d=normalize(direction),sun=normalize(sunDirection);float up=max(0.,d.y),elevation=max(0.,sun.y);float toward=max(0.,dot(d,sun));float horizon=pow(1.-up,3.);float dusk=(1.-day)*twilight;
+ vec3 zenith=mix(vec3(.12,.28,.55),vec3(.065,.16,.31),cloudCover*.4);vec3 daylight=mix(zenith,vec3(.55,.68,.79),horizon);vec3 warm=vec3(1.1,.43,.14);daylight+=warm*pow(toward,8.)*dusk*.60;daylight=mix(daylight,vec3(.29,.35,.40),cloudCover*.38);
+ vec2 uv=vec2(atan(d.z,d.x)/6.2831853+.5,asin(clamp(d.y,-1.,1.))/3.14159265+.5);vec3 photo=min(texture2D(skyPhoto,uv).rgb,vec3(3.));daylight=mix(daylight,min(photo,vec3(1.2))*.92,(1.-cloudCover)*.55);daylight+=warm*horizon*dusk*(.07+.28*pow(toward,3.));
+ vec3 night=mix(vec3(.005,.010,.023),vec3(.030,.043,.060),horizon);float moon=dot(d,normalize(vec3(.32,.82,.31)));night+=vec3(.25,.30,.39)*smoothstep(.99992,.99998,moon)*(1.-cloudCover*.9);night+=vec3(.012,.017,.022)*pow(max(0.,moon),28.)*(1.-cloudCover);
+ vec3 colour=mix(night,daylight,twilight);float opacity=0.;if(d.y>.025&&cloudCover>.08){float start=850./d.y,span=min(18000.,800./d.y),stepSize=span/12.;float trans=1.;vec3 scattered=vec3(0.);float forward=pow(toward,12.);vec3 lightColour=mix(vec3(.86,.96,1.08),vec3(1.6,.80,.36),clamp(dusk+(.3-elevation),0.,1.));
+ for(int i=0;i<12;i++){vec3 p=d*(start+(float(i)+.5)*stepSize);float den=densityAt(p);if(den>.001){float probe=densityAt(p+sun*260.);float lighting=exp(-probe*2.8);float absorption=1.-exp(-den*stepSize*.0026);vec3 ambient=mix(vec3(.016,.023,.034),vec3(.39,.47,.55),twilight);vec3 lit=ambient+lightColour*(.30+.85*lighting)*(.35+.65*day)*twilight+lightColour*forward*lighting*.22*twilight;scattered+=trans*absorption*lit;trans*=1.-absorption;}if(trans<.025)break;}
+ opacity=1.-trans;colour=colour*trans+scattered;}
+ // Sun radiance is tied to the directional light; no second photographic sun.
+ float disk=smoothstep(cos(.0054),cos(.0044),toward);colour+=vec3(1.0,.83,.62)*disk*26.*day*(1.-opacity);colour+=vec3(1.,.65,.36)*pow(toward,64.)*.12*day*(1.-opacity);
+ float horizonCloud=smoothstep(.72,1.,cloudCover)*(1.-smoothstep(.0,.16,up));vec3 deck=mix(vec3(.025,.038,.055),vec3(.42,.48,.53),twilight);colour=mix(colour,deck,horizonCloud*.8);float star=step(.99987,fract(sin(dot(floor(uv*vec2(1800.,900.)),vec2(127.1,311.7)))*43758.5453))*smoothstep(.12,.5,up);colour+=vec3(.10)*star*(1.-twilight)*(1.-cloudCover);
+ colour+=vec3(.26,.32,.42)*flash*(.25+opacity*.75);gl_FragColor=vec4(max(colour,vec3(0.)),1.);
+ #include <tonemapping_fragment>
+ #include <colorspace_fragment>
+ }`});
+ const dome=new THREE.Mesh(new THREE.SphereGeometry(2800,48,24),material);dome.name='Directional atmosphere / atlas cloud scattering';dome.userData.dynamic=true;dome.frustumCulled=false;scene.add(dome);
+ return {dome,uniforms,set(day,twilight,cloudCover,sun){uniforms.day.value=day;uniforms.twilight.value=twilight;uniforms.cloudCover.value=cloudCover;uniforms.sunDirection.value.copy(sun);},update(dt,focus){uniforms.clock.value+=Math.max(0,dt);dome.position.set(focus.x,0,focus.z);}};
 }

@@ -11,9 +11,9 @@ vec2 rainWaterSlope(vec2 worldXZ,float clock,float amount){
  vec2 p=worldXZ*2.15,cell=floor(p),slope=vec2(0.);
  for(int iy=-1;iy<=1;iy++)for(int ix=-1;ix<=1;ix++){
   vec2 donor=cell+vec2(float(ix),float(iy));vec2 hash=rainHash(donor);
-  float age=mod(clock+hash.x*1.85,1.85);
+  float period=1.65+hash.y*.75;float cycle=floor((clock+hash.x*period)/period);float age=mod(clock+hash.x*period,period);hash=rainHash(donor+cycle*vec2(7.13,3.71));
   vec2 delta=p-donor-.16-hash*.68;float dist=length(delta);
-  float radius=age*.76;float front=dist-radius;
+  float radius=sqrt(max(0.,age))*.66;float front=dist-radius;
   float fade=exp(-age*3.4)*smoothstep(0.,.035,age)*(1.-smoothstep(.68,.96,age));
   float packet=sin(front*48.)*exp(-front*front*135.);
   float eventWeight=1.-smoothstep(amount,amount+.12,hash.y);

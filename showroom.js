@@ -1,6 +1,7 @@
+import {weatherLighting,weatherMistRGB} from './weather-state.js?v=221';
 import {batchStaticMeshes} from './static-batching.js';
 import * as THREE from 'three';
-import {createPitGarage} from './pit-garage.js';
+import {createPitGarage} from './pit-garage.js?v=221';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {upgradeGarageEquipment} from './precision-garage.js';
 export async function createShowroom(renderer){
@@ -9,7 +10,7 @@ export async function createShowroom(renderer){
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(14,16.5),new THREE.MeshPhysicalMaterial({color:'#11161e',roughness:.47,metalness:.05,clearcoat:.25,clearcoatRoughness:.32}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-.006,2.6);floor.receiveShadow=true;scene.add(floor);
   const disc=new THREE.Mesh(new THREE.CylinderGeometry(4.05,4.05,.035,128),new THREE.MeshStandardMaterial({color:'#1a212a',roughness:.77,metalness:.08}));disc.position.y=-.025;disc.receiveShadow=true;scene.add(disc);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(4.06,.006,8,192),new THREE.MeshBasicMaterial({color:'#49556a'}));ring.rotation.x=Math.PI/2;ring.position.y=.001;scene.add(ring);
-  const key=new THREE.DirectionalLight('#e4eeff',2.2);key.position.set(-2.5,4.05,2.5);key.castShadow=true;key.shadow.autoUpdate=false;key.shadow.needsUpdate=true;key.shadow.mapSize.set(4096,4096);key.shadow.camera.left=-8;key.shadow.camera.right=8;key.shadow.camera.top=8;key.shadow.camera.bottom=-8;key.shadow.camera.near=.5;key.shadow.camera.far=25;key.shadow.normalBias=.002;key.shadow.bias=-.00005;scene.add(key);
+  const key=new THREE.DirectionalLight('#e4eeff',2.2);key.position.set(-3.5,4.25,1);key.castShadow=true;key.shadow.autoUpdate=false;key.shadow.needsUpdate=true;key.shadow.mapSize.set(4096,4096);key.shadow.camera.left=-8;key.shadow.camera.right=8;key.shadow.camera.top=8;key.shadow.camera.bottom=-8;key.shadow.camera.near=.5;key.shadow.camera.far=25;key.shadow.normalBias=.002;key.shadow.bias=-.00005;scene.add(key);
   const fill=new THREE.DirectionalLight('#a7c9ff',.65);fill.position.set(5,3,-3);scene.add(fill);const rim=new THREE.DirectionalLight('#ffe1be',1.2);rim.position.set(-4,2,-4);scene.add(rim);
   const ambient=new THREE.HemisphereLight('#c6ded8','#171d22',.28);scene.add(ambient);
   const wall=new THREE.Mesh(new THREE.PlaneGeometry(26,8),new THREE.MeshStandardMaterial({color:'#10141c',roughness:.84,metalness:.12}));wall.position.set(0,3.9,-5.4);wall.receiveShadow=true;scene.add(wall);
@@ -22,7 +23,7 @@ export async function createShowroom(renderer){
   batchStaticMeshes(pitGarage.group);
  // Capture the actual luminaires and room for bodywork reflections, without the car reflecting itself.
  const captureTarget=new THREE.WebGLCubeRenderTarget(512,{type:THREE.HalfFloatType,generateMipmaps:false});const cubeCamera=new THREE.CubeCamera(.12,70,captureTarget);cubeCamera.position.set(0,1.25,0);let reflectionDirty=true,roomEnvironment=null,tunnel=false;
- function setEnvironment(weather,hour){pitGarage.setEnvironment(weather,hour);const night=hour>=19||hour<5;key.intensity=night?1.35:1.9;fill.intensity=night?.28:.5;rim.intensity=night?.7:1.05;ambient.intensity=night?.16:.25;reflectionDirty=true;key.shadow.needsUpdate=true;}
+ function setEnvironment(weather,hour){pitGarage.setEnvironment(weather,hour);const lighting=weatherLighting(weather,hour);scene.userData.weatherState={...lighting,mistColour:new THREE.Color().setRGB(...weatherMistRGB(lighting)),mistStart:14,sunDirection:new THREE.Vector3(0,1,0)};key.intensity=1.35+lighting.twilight*.35;fill.intensity=.23+lighting.twilight*.16;rim.intensity=.65+lighting.twilight*.20;ambient.intensity=.16+lighting.twilight*.07;reflectionDirty=true;key.shadow.needsUpdate=true;}
  function prepareReflections(renderer,car){if(tunnel||!reflectionDirty)return;reflectionDirty=false;const hidden=[car,...pitGarage.reflectors];const states=hidden.map(o=>o.visible);hidden.forEach(o=>o.visible=false);const shadowAuto=key.shadow.autoUpdate,shadowDirty=key.shadow.needsUpdate;key.shadow.autoUpdate=false;key.shadow.needsUpdate=false;try{cubeCamera.update(renderer,scene);const next=pmrem.fromCubemap(captureTarget.texture);roomEnvironment?.dispose();roomEnvironment=next;scene.environment=next.texture;scene.environmentIntensity=.95;for(const mirror of pitGarage.reflectors)mirror.forceUpdate=true;}finally{key.shadow.autoUpdate=shadowAuto;key.shadow.needsUpdate=shadowDirty;hidden.forEach((o,i)=>o.visible=states[i]);}}
  const garageObjects=scene.children.filter(o=>!o.isLight);let garageShadow=null;
  // The 60% test car needs a 6 m shadow footprint, versus the 16 m garage.

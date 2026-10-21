@@ -1,0 +1,19 @@
+import * as THREE from 'three';
+const vertex='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}';
+const viewGLSL=`uniform sampler2D sceneDepth;uniform mat4 inverseProjection;vec3 viewPoint(vec2 uv){uv=(floor(uv/pixel)+.5)*pixel;float d=texture2D(sceneDepth,uv).r;vec4 p=inverseProjection*vec4(uv*2.-1.,d*2.-1.,1.);return p.xyz/max(abs(p.w),1.e-9)*sign(p.w);}`;
+export function createWeatherPost(){
+ const make=()=>new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:false,samples:0,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+ const ao=make(),bloom=make(),ping=make(),pong=make();ao.texture.minFilter=ao.texture.magFilter=THREE.NearestFilter;
+ const uniforms={sceneDepth:{value:null},inverseProjection:{value:new THREE.Matrix4()},pixel:{value:new THREE.Vector2()},image:{value:null},axis:{value:new THREE.Vector2()}};
+ const material=fragment=>new THREE.ShaderMaterial({uniforms,depthTest:false,depthWrite:false,toneMapped:false,vertexShader:vertex,fragmentShader:fragment});
+ const occlusion=material(`varying vec2 vUv;uniform vec2 pixel;${viewGLSL}
+ void main(){float z=texture2D(sceneDepth,vUv).r;vec3 p=viewPoint(vUv);float depth=-p.z;if(z>.99999||depth<.65||depth>120.){gl_FragColor=vec4(1.,depth,0.,1.);return;}
+ vec3 dx=dFdx(p),dy=dFdy(p);vec3 n=normalize(cross(dx,dy)+vec3(1.e-9));if(dot(n,-p)<0.)n=-n;float oc=0.;float rad=clamp(.62/max(1.,depth),.0008,.08);
+ for(int i=0;i<16;i++){float a=.37+float(i)*2.3999632,dist=sqrt((float(i)+.5)/16.);vec2 uv=clamp(vUv+vec2(cos(a)*pixel.x/pixel.y,sin(a))*dist*rad,vec2(.001),vec2(.999));vec3 delta=viewPoint(uv)-p;float len=length(delta);oc+=max(0.,dot(n,delta)-max(.018,depth*.0012))/max(len,.0001)*(1.-smoothstep(.10,.90,len));}
+ float value=1.-clamp(oc/16.*2.1,0.,.29)*smoothstep(.65,1.6,depth);gl_FragColor=vec4(value,depth,0.,1.);}`);
+ const threshold=material(`varying vec2 vUv;uniform sampler2D image;uniform vec2 pixel;vec3 high(vec2 uv){vec3 c=min(texture2D(image,uv).rgb,vec3(64.));float l=dot(c,vec3(.2126,.7152,.0722));float soft=clamp(l-1.0,0.,1.);return c*max(max(l-1.65,soft*soft*.16),0.)/max(l,.001);}void main(){vec3 c=(high(vUv+pixel*vec2(-.5,-.5))+high(vUv+pixel*vec2(.5,-.5))+high(vUv+pixel*vec2(-.5,.5))+high(vUv+pixel*vec2(.5,.5)))*.25;gl_FragColor=vec4(c,1.);}`);
+ const blur=material(`varying vec2 vUv;uniform sampler2D image;uniform vec2 axis;void main(){vec3 c=texture2D(image,vUv).rgb*.227027;c+=(texture2D(image,vUv+axis*1.384615).rgb+texture2D(image,vUv-axis*1.384615).rgb)*.316216;c+=(texture2D(image,vUv+axis*3.230769).rgb+texture2D(image,vUv-axis*3.230769).rgb)*.070270;gl_FragColor=vec4(c,1.);}`);
+ const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1),quad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),occlusion);scene.add(quad);let frames=0;
+ function render(renderer,target,view){const w=Math.max(1,Math.ceil(target.width/2)),h=Math.max(1,Math.ceil(target.height/2));for(const rt of [ao,bloom,ping,pong])if(rt.width!==w||rt.height!==h)rt.setSize(w,h);uniforms.sceneDepth.value=target.depthTexture;uniforms.inverseProjection.value.copy(view.projectionMatrixInverse);uniforms.pixel.value.set(1/target.width,1/target.height);quad.material=occlusion;renderer.setRenderTarget(ao);renderer.render(scene,camera);uniforms.image.value=target.texture;quad.material=threshold;renderer.setRenderTarget(bloom);renderer.render(scene,camera);quad.material=blur;uniforms.image.value=bloom.texture;uniforms.axis.value.set(1/w,0);renderer.setRenderTarget(ping);renderer.render(scene,camera);uniforms.image.value=ping.texture;uniforms.axis.value.set(0,1/h);renderer.setRenderTarget(pong);renderer.render(scene,camera);frames++;}
+ return {render,ao,bloom:pong,get stats(){return{frames,ao:[ao.width,ao.height],bloom:[pong.width,pong.height],aoTaps:16,bloomBlurTaps:10};},dispose(){for(const t of [ao,bloom,ping,pong])t.dispose();for(const m of [occlusion,threshold,blur])m.dispose();quad.geometry.dispose();}};
+}

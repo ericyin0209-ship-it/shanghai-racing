@@ -1,4 +1,4 @@
-import {waterRippleGLSL} from './water-ripples.js?v=215c';
+import {waterRippleGLSL} from './water-ripples.js?v=221';
 import * as THREE from 'three';
 import {Reflector} from './vendor/Reflector.js';
 // Planar captures: hide peer reflectors during capture to avoid recursive rendering.
