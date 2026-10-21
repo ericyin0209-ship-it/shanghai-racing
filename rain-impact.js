@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {wrap} from './physics.js';
+import {wrap} from './physics.js?v=224';
 // Metres/seconds. Visible impact rings follow the driving surface, never the grass.
 export function impactEnvelope(age){return age>=0&&age<.92?Math.sin(Math.min(1,age/.055)*Math.PI/2)*Math.pow(1-age/.92,1.65):0;}
 export function createRainImpacts(scene,track){

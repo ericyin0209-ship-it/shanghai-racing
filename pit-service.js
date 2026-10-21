@@ -1,4 +1,4 @@
-import {clamp,angle,steeringLimit} from './physics.js';
+import {clamp,angle,steeringLimit} from './physics.js?v=224';
 export function createPitService(track){let phase='idle',index=0,remaining=0;const entry=[[-6,-560],[-23,-533],[-25,-488],[-25,-190]],exit=[[-25,-12],[-22,18],[-6,43],[0,70]];
  function drive(v,point,parking=false){const dx=point[0]-v.x,dz=point[1]-v.z,d=Math.hypot(dx,dz),error=angle(Math.atan2(dx,dz)-v.yaw-Math.atan2(v.lateralSpeed,Math.max(3,v.speed))*.6),target=Math.min(10,Math.max(parking?0:2,d*(parking?.8:.45)))*(Math.abs(error)>.7?.45:1);const steer=clamp(Math.atan2(7.2*Math.sin(error),Math.max(6,Math.min(30,d)))/steeringLimit(v.speed),-1,1),traction=clamp(1-Math.abs(v.rearSlip||0)*5-Math.abs(v.slip||0)*3,.1,1);return {steer,throttle:clamp((target-v.speed)*.35,0,.25)*traction,brake:clamp((v.speed-target)*.5,0,1)};}
 

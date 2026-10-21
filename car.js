@@ -23,7 +23,7 @@ export function smoothFacetedNormals(g,creaseDegrees=42){const p=g.attributes.po
  const out=new Float32Array(count*3),limit=Math.cos(creaseDegrees*Math.PI/180);
  for(let i=0;i<count;i++){const ax=n.getX(i),ay=n.getY(i),az=n.getZ(i);let sx=0,sy=0,sz=0;for(const j of groups.get(keys[i])){const bx=n.getX(j),by=n.getY(j),bz=n.getZ(j);if(ax*bx+ay*by+az*bz>=limit){sx+=bx;sy+=by;sz+=bz;}}const l=Math.hypot(sx,sy,sz)||1;out[i*3]=sx/l;out[i*3+1]=sy/l;out[i*3+2]=sz/l;}
  g.setAttribute('normal',new THREE.BufferAttribute(out,3));return g;}
-export async function preloadCars(renderer,{modelLoader=()=>new GLTFLoader().loadAsync('assets/models/amr23-r3.gltf')}={}){
+export async function preloadCars(renderer,{modelLoader=()=>new GLTFLoader().loadAsync('assets/models/amr23-r3.gltf?v=224')}={}){
  const gltf=await modelLoader();const model=gltf.scene,assemblyReport={patched:[],removed:[]};model.updateMatrixWorld(true);const rotate=new THREE.Matrix4().makeRotationY(Math.PI/2),buckets=new Map();bounds=new THREE.Box3();
  model.traverse(o=>{if(!o.isMesh)return;let g=o.geometry.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(rotate,o.matrixWorld));if(/fitted atlas/i.test(o.material?.name||''))smoothFacetedNormals(g);g.computeBoundingBox();bounds.union(g.boundingBox);const c=g.boundingBox.getCenter(new THREE.Vector3()),name=o.name.replaceAll('_',' ');let part='body';const extent=g.boundingBox.getSize(new THREE.Vector3());if(/wing|floor|diffuser|sidepod|nose|tyre.*rounded|suspension.*arm/i.test(name)&&extent.length()>.09&&extent.length()<4.5)aeroBoxes.push({name,center:c.toArray(),extent:extent.toArray()});
  

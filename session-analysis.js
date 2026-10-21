@@ -1,5 +1,5 @@
 import {tyreOperatingRange} from './tyre-thermal.js';
-import {clamp} from './physics.js';
+import {clamp} from './physics.js?v=224';
 const range=s=>tyreOperatingRange(s.setup?.compound||(s.environment?.weather==='storm'?'wet':s.environment?.weather==='rain'?'intermediate':'medium'));
 export const practiceZones=[{name:'一号弯区域',start:.015,end:.16},{name:'六号弯区域',start:.24,end:.36},{name:'高速组合弯区域',start:.38,end:.53},{name:'长直道出口重刹区域',start:.84,end:.97}];
 export function analyseSession(samples,length){

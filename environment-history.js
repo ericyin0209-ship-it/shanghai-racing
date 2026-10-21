@@ -1,4 +1,4 @@
-import {clamp} from './physics.js';
+import {clamp} from './physics.js?v=224';
 // Small per-sample conditions plus bounded, two-second drying-trail checkpoints.
 export class EnvironmentHistory{
  constructor(){this.frames=[];this.lastTime=-Infinity;this.lastKey='';}

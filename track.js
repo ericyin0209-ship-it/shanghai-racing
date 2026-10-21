@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createTrackLocator} from './track-locator.js';
-import {wrap} from './physics.js';
+import {wrap} from './physics.js?v=224';
 import {surfaceHeight,waterAt} from './road-surface.js';
 export async function createTrack(){
   const data=await fetch('./track-data.json').then(r=>{if(!r.ok)throw Error('无法读取赛道数据');return r.json()});

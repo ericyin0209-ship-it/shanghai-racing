@@ -34,7 +34,7 @@ import {createTracksideDetails} from './trackside-details.js?v=225';
 import {createFoliage} from './foliage.js';
 import {createCircuitFinish} from './circuit-finish.js?v=218i';
 import {createAtmosphere} from './atmosphere.js?v=221';
-import {solarPosition,clamp} from './physics.js';
+import {solarPosition,clamp} from './physics.js?v=224';
 function seeded(seed=38){return ()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
 function texture(size,draw,repeat=1){const c=document.createElement('canvas');c.width=c.height=size;draw(c.getContext('2d'),size);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(repeat,repeat);return t;}
 function label(text,color='#e6f4de',bg='#1b3429',width=1024,height=128){const c=document.createElement('canvas');c.width=width;c.height=height;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);ctx.font=`600 ${height*.46}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(text,width/2,height/2);return new THREE.CanvasTexture(c);}

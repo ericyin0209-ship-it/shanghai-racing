@@ -13,12 +13,19 @@ export function grip(wetness,temp=85,wear=0,compound='medium'){
  return rain*dryPenalty*tempScale*(1-.28*wear)*(compound==='soft'?1.045:compound==='hard'?.955:1);
 }
 export const steeringLimit=speed=>.46/(1+speed*.016);
-const mounts=[['FL',.8325,1.67],['FR',-.8325,1.67],['RL',.7855,-1.93],['RR',-.7855,-1.93]];
+// AMR23 / 2023 regulations: 3600 mm wheelbase, 44.5–46.0 % static front weight (Aston Martin
+// technical specification). Use 45.25 %: centre of gravity 1.971 m behind the front axle.
+// The visual model's origin sits CG_TO_MODEL_ORIGIN ahead of the centre of gravity.
+// Rear tyres are much wider (405 vs 305 mm section): give the rear axle more peak grip. Calibrated so the
+// handling balance (yaw-rate gain, lift-off response) stays where it was with the old 53.6 % front weight.
+export const AXLE_GRIP=[.94,1.12];
+export const FRONT_ARM=1.971,REAR_ARM=1.629,CG_TO_MODEL_ORIGIN=FRONT_ARM-1.67;
+const mounts=[['FL',.8325,FRONT_ARM],['FR',-.8325,FRONT_ARM],['RL',.7855,-REAR_ARM],['RR',-.7855,-REAR_ARM]];
 export function createVehicle(setup={}){const settings={...defaultSetup,...setup};return {x:0,y:.04,z:0,yaw:0,speed:0,steer:0,yawRate:0,slip:0,temperature:28,wear:0,throttle:0,brake:0,gear:0,distance:0,offroad:false,lateralSpeed:0,longitudinalAcceleration:0,lateralAcceleration:0,frontSlip:0,rearSlip:0,brakeBalance:settings.brakeBalance/100,pitLimiter:false,manual:false,rpm:4500,setup:settings,bodyVelocity:0,roll:0,pitch:0,rollVelocity:0,pitchVelocity:0,downforce:0,floorContact:0,energy:1,fuel:100,damage:{frontWing:0,rearWing:0,suspension:0},wheels:mounts.map(([id,x,z])=>({id,x,z,roadHeight:.035,compression:0,load:1957,omega:0,spin:0,temperature:28,brakeTemperature:110,wear:0,pressure:settings.pressure,slipRatio:0,slipAngle:0,forceX:0,forceZ:0,waterDepth:0,contact:true,curb:false})),service:null};}
 export function resetVehicleMotion(v,surface){
  for(const key of ['speed','steer','yawRate','slip','lateralSpeed','longitudinalAcceleration','lateralAcceleration','frontSlip','rearSlip','throttle','brake','bodyVelocity','roll','pitch','rollVelocity','pitchVelocity','downforce','floorContact','deliveredThrottle'])v[key]=0;
  v.gear=0;v.rpm=4500;v.offroad=false;const co=Math.cos(v.yaw),si=Math.sin(v.yaw);let mean=0;
- for(const w of v.wheels){const x=v.x+co*w.x+si*w.z,z=v.z-si*w.x+co*w.z,road=surface?.(x,z)||{height:.035};w.roadHeight=w.previousRoad=road.height;mean+=road.height/4;w.omega=w.slipRatio=w.slipAngle=w.relaxedSlipAngle=w.forceX=w.forceZ=w.compression=0;w.contact=true;w.curb=!!road.curb;w.waterDepth=road.depth||0;w.load=798*9.81*(w.z>0?1.93:1.67)/3.6/2;}
+ for(const w of v.wheels){const x=v.x+co*w.x+si*w.z,z=v.z-si*w.x+co*w.z,road=surface?.(x,z)||{height:.035};w.roadHeight=w.previousRoad=road.height;mean+=road.height/4;w.omega=w.slipRatio=w.slipAngle=w.relaxedSlipAngle=w.forceX=w.forceZ=w.compression=0;w.contact=true;w.curb=!!road.curb;w.waterDepth=road.depth||0;w.load=798*9.81*(w.z>0?REAR_ARM:FRONT_ARM)/3.6/2;}
  v.y=mean+((v.setup?.rideHeight??38)-38)*.001;return v;
 }
 export function repairVehicle(v,{tyres=true}={}){v.damage={frontWing:0,rearWing:0,suspension:0};v.fuel=100;v.energy=1;for(const w of v.wheels)w.brakeTemperature=110;if(tyres)for(const w of v.wheels){w.wear=0;w.temperature=65;w.pressure=v.setup.pressure;}if(tyres)conditionTyres(v);v.wear=0;}
@@ -53,7 +60,7 @@ export function stepVehicle(v,input,dt,environment){
   const surface=environment.surface?.(wx,wz)||{height:.035,wetness:wet,depth:0,gripScale:1,offroad:environment.offroad,curb:false};
 
   w.roadHeight=surface.height;w.curb=surface.curb;w.waterDepth=surface.depth||0;mean+=surface.height*.25;offCount+=surface.offroad?1:0;
-  const staticLoad=mass*gravity*(front?1.93:1.67)/3.6/2;
+  const staticLoad=mass*gravity*(front?REAR_ARM:FRONT_ARM)/3.6/2;
   const aero=v.downforce*(front?frontAero:1-frontAero)/2;
   const pitchHeight=-w.z*v.pitch,rollHeight=w.x*v.roll;
   const compression=clamp(surface.height-v.y-pitchHeight-rollHeight+(settings.rideHeight-38)*.001,-.09,.075);
@@ -63,7 +70,7 @@ export function stepVehicle(v,input,dt,environment){
   const load=staticLoad+aero+(front?transferLong:-transferLong)*.5+(w.x<0?transferLat:-transferLat)*.5+suspension*.25;
   w.load=Math.max(0,load)*(1-v.damage.suspension*.2);w.contact=w.load>50;
   const pressureFactor=clamp(1-Math.abs(w.pressure-24)*.018,.8,1),aquaplane=clamp(w.waterDepth*speed*speed*(settings.compound==='wet'?.035:settings.compound==='intermediate'?.075:.18),0,.65);
-  const mu=1.70*grip(surface.wetness??wet,w.temperature,w.wear,settings.compound)*pressureFactor*(surface.offroad?.38:1)*(surface.gripScale??1)*(1-aquaplane);
+  const mu=1.70*(front?AXLE_GRIP[0]:AXLE_GRIP[1])*grip(surface.wetness??wet,w.temperature,w.wear,settings.compound)*pressureFactor*(surface.offroad?.38:1)*(surface.gripScale??1)*(1-aquaplane);
   const limit=Math.max(1,w.load*mu*Math.pow(Math.max(.25,w.load/2000),-.12));
   const longitudinal=speed-v.yawRate*w.x,lateral=v.lateralSpeed+v.yawRate*w.z,steer=front?(i===0?frontAngles.left:frontAngles.right)*(1-v.damage.suspension*.12):0;
   const alpha=angle(steer-Math.atan2(lateral,Math.max(2,longitudinal)));w.slipAngle=alpha;
@@ -101,7 +108,8 @@ export function stepVehicle(v,input,dt,environment){
  const centerRoad=environment.surface?.(v.x,v.z)?.height??mean,clearance=.045+v.y-centerRoad-Math.abs(v.roll)*.5-Math.abs(v.pitch)*.8;v.floorContact=v.speed>12?clamp((.009-clearance)/.012,0,1):0;if(v.floorContact>0)v.speed=Math.max(0,v.speed-v.floorContact*dt*.55);
  const frontMean=(v.wheels[0].roadHeight+v.wheels[1].roadHeight)/2,rearMean=(v.wheels[2].roadHeight+v.wheels[3].roadHeight)/2;
  const stiffness=clamp(145/settings.spring,.65,1.5),aeroPlatform=1/(1+v.downforce/(mass*gravity)*.18);
- const targetPitch=clamp((rearMean-frontMean)/3.6-v.longitudinalAcceleration*.00068*stiffness*aeroPlatform,-.035,.035),targetRoll=clamp((v.wheels[0].roadHeight+v.wheels[2].roadHeight-v.wheels[1].roadHeight-v.wheels[3].roadHeight)/3.33+v.lateralAcceleration*.00057*stiffness*aeroPlatform,-.032,.032);
+ // Stiff F1 platform: about 1° nose-down at full braking and under 1° of roll at peak cornering (estimates).
+ const targetPitch=clamp((rearMean-frontMean)/3.6-v.longitudinalAcceleration*.00042*stiffness*aeroPlatform,-.02,.02),targetRoll=clamp((v.wheels[0].roadHeight+v.wheels[2].roadHeight-v.wheels[1].roadHeight-v.wheels[3].roadHeight)/3.33+v.lateralAcceleration*.00034*stiffness*aeroPlatform,-.016,.016);
  [v.pitch,v.pitchVelocity]=springStep(v.pitch,v.pitchVelocity,targetPitch,13,dt);[v.roll,v.rollVelocity]=springStep(v.roll,v.rollVelocity,targetRoll,14,dt);
  v.temperature=v.wheels.reduce((a,w)=>a+w.temperature,0)/4;v.wear=v.wheels.reduce((a,w)=>a+w.wear,0)/4;v.offroad=offCount>1;v.distance+=v.speed*dt;
  v.energy=clamp(v.energy+dt*(v.brake*.016-v.throttle*.005),0,1);v.fuel=Math.max(0,v.fuel-dt*(.005+v.throttle*.016));
