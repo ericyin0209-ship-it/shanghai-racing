@@ -25,7 +25,8 @@ export function createCircuitLandmarks(scene,standAxis){
   for(let x=-58;x<=58;x+=5.8){box('bridge internal partition',[.10,2.8,12],[x,25.12,z],m.dark);box('bridge recessed ceiling lens',[3.2,.025,.25],[x,27.6175,z-9.2],m.glow);}
   for(const x of [-53,53]){
    const t=new THREE.Group();t.position.set(x,0,z);root.add(t);const tb=createLandmarkBuilder(t);
-   const towerWall=new THREE.CylinderGeometry(7.1,8,23.3,64,1,true),o=new THREE.Mesh(towerWall,m.warmGlass);o.position.y=11.9;o.castShadow=o.receiveShadow=true;t.add(o);
+   // Spectator side (x>0): red cylindrical stair towers; team side: glass office towers (Tilke design notes, building.co.uk).
+   const towerWall=new THREE.CylinderGeometry(7.1,8,23.3,64,1,true),o=new THREE.Mesh(towerWall,x>0?(m.stairRed??=new THREE.MeshPhysicalMaterial({color:'#b5262b',metalness:.35,roughness:.38,clearcoat:.6,clearcoatRoughness:.25,side:THREE.DoubleSide})):m.warmGlass);o.position.y=11.9;o.castShadow=o.receiveShadow=true;t.add(o);
    const plinth=new THREE.Mesh(new THREE.CylinderGeometry(8.25,8.6,.55,64),m.concrete);plinth.position.y=.275;t.add(plinth);
    for(let j=0;j<40;j++){const a=j*Math.PI/20,xx=Math.cos(a),zz=Math.sin(a);tb.beam('tower curtain mullions',[xx*8,.55,zz*8],[xx*7.1,23.55,zz*7.1],.06,m.alloy);}
    for(let k=1;k<=7;k++){const y=k*3.15+.4,r=8-(y/23.3)*.9;mesh('Tower continuous floor edge',ellipseLoft([[r+.12,r+.12,y-.10],[r+.12,r+.12,y+.10]],64),m.alloy,[x,0,z]);}

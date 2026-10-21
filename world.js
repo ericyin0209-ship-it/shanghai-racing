@@ -5,7 +5,7 @@ import {createWetReflection} from './wet-reflection.js?v=224';
 import {createWeatherRain} from './weather-rain.js?v=221';
 import {optimizeEnvironmentBatches} from './environment-batching.js?v=218i';
 import {createKerbSurfaces} from './circuit-kerbs.js?v=218i';
-import {createCircuitLandmarks} from './circuit-landmarks.js?v=218i';
+import {createCircuitLandmarks} from './circuit-landmarks.js?v=225';
 import {createTrackEnvironment,formedRailGeometry} from './circuit-track-detail.js?v=218i';
 import {createPaddockDetail} from './circuit-paddock.js?v=221';
 import {constructionFinish} from './circuit-surface.js?v=218i';
@@ -28,9 +28,9 @@ import {Sky} from './vendor/Sky.js';
 import {Reflector} from './vendor/Reflector.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {createSurroundings} from './surroundings.js?v=221';
+import {createSurroundings} from './surroundings.js?v=225';
 import {createCircuitDetailUpgrade} from './circuit-detail-upgrade.js?v=216';
-import {createTracksideDetails} from './trackside-details.js?v=216';
+import {createTracksideDetails} from './trackside-details.js?v=225';
 import {createFoliage} from './foliage.js';
 import {createCircuitFinish} from './circuit-finish.js?v=218i';
 import {createAtmosphere} from './atmosphere.js?v=221';
@@ -52,7 +52,7 @@ export async function createWorld(scene,renderer,track){
  
  `);};
   const road=new THREE.Mesh(track.ribbon(-7.2,7.2),asphalt);road.receiveShadow=true;scene.add(road);
-  const runoff=new THREE.Mesh(track.ribbon(-16,16,.014),new THREE.MeshStandardMaterial({color:'#69777a',map:asphaltTex,roughness:1}));runoff.receiveShadow=true;scene.add(runoff);
+  const runoffMaterial=new THREE.MeshStandardMaterial({color:'#69777a',map:asphaltTex,roughness:1});for(const [inner,outer] of [[-16,-8.4],[8.4,16]]){const runoff=new THREE.Mesh(track.ribbon(inner,outer,.014),runoffMaterial);runoff.receiveShadow=true;scene.add(runoff);}
   const green=new THREE.MeshStandardMaterial({color:'#668274',roughness:1});
   for(const side of [-1,1]){const m=new THREE.Mesh(track.ribbon(side*8.45,side*11,.032),green);m.receiveShadow=true;scene.add(m);}
   const white=new THREE.MeshStandardMaterial({color:'#f2eddf',roughness:.78});
@@ -77,13 +77,12 @@ export async function createWorld(scene,renderer,track){
   for(let i=0;i<24;i++){const s=-20-i*8.5,x=i%2?3:-3;for(let k=0;k<2;k++){obj.position.set(x+(k?1:-1),.07,s);obj.updateMatrix();grid.setMatrixAt(i*2+k,obj.matrix);}}scene.add(grid);
   // Armco follows the full source-coordinate circuit.
   const railMat=new THREE.MeshStandardMaterial({color:'#b4babc',metalness:.65,roughness:.45});
-  const count=Math.ceil(track.length/5),rails=new THREE.InstancedMesh(formedRailGeometry((track.length/count)*.998),railMat,count*2);
-  for(let i=0;i<count;i++)for(const side of [-1,1]){const f=track.at(i*track.length/count,side*19);obj.position.copy(f.p);obj.position.y=.48;obj.rotation.set(0,f.yaw,0);obj.updateMatrix();rails.setMatrixAt(i*2+(side>0?1:0),obj.matrix);}
+  const railLength=5,railPlacements=[];for(const side of [-1,1]){const path=[];for(let s=0;s<=track.length;s+=1)path.push(track.at(Math.min(s,track.length-.001),side*19).p);const cumulative=[0];for(let k=1;k<path.length;k++)cumulative.push(cumulative[k-1]+Math.hypot(path[k].x-path[k-1].x,path[k].z-path[k-1].z));const total=cumulative.at(-1),pieces=Math.max(1,Math.round(total/railLength)),piece=total/pieces;let k=0;const pointAt=d=>{while(k<cumulative.length-2&&cumulative[k+1]<d)k++;const u=(d-cumulative[k])/Math.max(1e-6,cumulative[k+1]-cumulative[k]);return {x:path[k].x+(path[k+1].x-path[k].x)*u,z:path[k].z+(path[k+1].z-path[k].z)*u};};for(let j=0;j<pieces;j++){k=Math.max(0,k-3);const a=pointAt(j*piece),b=pointAt((j+1)*piece),dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.05)continue;railPlacements.push({x:(a.x+b.x)/2,z:(a.z+b.z)/2,yaw:Math.atan2(dx,dz),stretch:len/(railLength*.998)});}}const rails=new THREE.InstancedMesh(formedRailGeometry(railLength*.998),railMat,railPlacements.length);railPlacements.forEach((r,i)=>{obj.position.set(r.x,.48,r.z);obj.rotation.set(0,r.yaw,0);obj.scale.set(1,1,r.stretch);obj.updateMatrix();rails.setMatrixAt(i,obj.matrix);});obj.scale.set(1,1,1);
   rails.castShadow=true;rails.receiveShadow=true;scene.add(rails);
   const fenceTexture=texture(1024,(c,s)=>{c.clearRect(0,0,s,s);c.strokeStyle='#81888a';c.lineWidth=4;for(let i=-s;i<s*2;i+=64){c.beginPath();c.moveTo(i,0);c.lineTo(i+s,s);c.stroke();c.beginPath();c.moveTo(i,0);c.lineTo(i-s,s);c.stroke();}});
   fenceTexture.anisotropy=renderer.capabilities.getMaxAnisotropy();
   const fenceMat=new THREE.MeshStandardMaterial({map:fenceTexture,transparent:false,alphaTest:.4,alphaToCoverage:true,roughness:.8,metalness:.18,side:THREE.DoubleSide});
-  for(const side of [-1,1]){const p=[],uv=[],idx=[];for(let i=0;i<=track.n;i+=4){const q=track.points[i],normal=track.frames[i].normal,x=q.x+normal.x*side*19,z=q.z+normal.z*side*19;p.push(x,.85,z,x,2.8,z);uv.push(i/track.n*track.length/2,0,i/track.n*track.length/2,1);const j=p.length/3-2;if(j>=2)idx.push(j-2,j,j-1,j-1,j,j+1);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();scene.add(new THREE.Mesh(g,fenceMat));}
+  for(const side of [-1,1]){const p=[],uv=[],idx=[];for(let i=0;i<=track.n;i+=4){const q=track.at(i/track.n*track.length,side*19).p,x=q.x,z=q.z;p.push(x,.85,z,x,2.8,z);uv.push(i/track.n*track.length/2,0,i/track.n*track.length/2,1);const j=p.length/3-2;if(j>=2)idx.push(j-2,j,j-1,j-1,j,j+1);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();scene.add(new THREE.Mesh(g,fenceMat));}
   // Pit apron and garages: visual prototypes, dimensions pending survey.
   const pitAsphalt=new THREE.MeshStandardMaterial({color:'#9b9f9e',map:asphaltTex,normalMap:asphaltNormal,normalScale:new THREE.Vector2(.09,.09),roughness:.87});pitAsphalt.userData.metricTile=3.0;box(26,.1,535,-32,.00,-257,pitAsphalt);
   box(2.2,1.1,510,-14.6,.55,-260,concrete);
@@ -130,7 +129,8 @@ box(.25,.8,.28,-35.4,1.4,z+5.9,new THREE.MeshStandardMaterial({color:'#b62e33',r
   for(const [s,labelText] of [[110,'100'],[60,'150'],[track.length*.87,'150'],[track.length*.88,'100'],[track.length*.89,'50']]){const f=track.at(s,10);const m=sign(labelText,2,1.3,f.p.x,1.6,f.p.z,f.yaw+Math.PI,'#253329','#eee9da');m.castShadow=true;}
   // Gravel and service-edge furniture informed by Tilke aerial photographs; extents approximate.
   const gravelTex=texture(512,(c,size)=>{c.fillStyle='#b1a38b';c.fillRect(0,0,size,size);for(let i=0;i<30000;i++){const grey=135+random()*60;c.fillStyle='rgb('+grey+','+(grey*.94)+','+(grey*.82)+')';c.fillRect(random()*size,random()*size,1+random()*3,1+random()*3);}},70),gravelMat=new THREE.MeshStandardMaterial({map:gravelTex,color:'#d3c8b1',roughness:1});
-  for(let i=0;i<track.n;i+=12){if(track.curvatures[i]<.0032)continue;const t=track.frames[i].t,after=track.frames[(i+6)%track.n].t,turn=t.z*after.x-t.x*after.z,outer=turn>0?-1:1;const trap=new THREE.Mesh(track.ribbon(outer*20.5,outer*38,.016,i,Math.min(track.n,i+12)),gravelMat);trap.receiveShadow=true;scene.add(trap);}
+  {// Gravel traps sit inside the barrier on the outside of corners, as continuous runs (one draw call).
+gravelMat.polygonOffset=true;gravelMat.polygonOffsetFactor=-2;gravelMat.polygonOffsetUnits=-2;const runs=[];let run=null;for(let i=0;i<track.n;i+=4){const t=track.frames[i].t,after=track.frames[(i+6)%track.n].t,turn=t.z*after.x-t.x*after.z,outer=turn>0?-1:1,corner=track.curvatures[i]>=.0032;if(corner&&run&&run.outer===outer&&i-run.end<=8){run.end=i+4;}else if(corner){if(run)runs.push(run);run={start:i,end:i+4,outer};}}if(run)runs.push(run);const parts=runs.filter(r=>r.end-r.start>=12).map(r=>track.ribbon(r.outer*11.4,r.outer*16.7,.03,Math.max(0,r.start-4),Math.min(track.n,r.end+4)));if(parts.length){const merged=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());const trap=new THREE.Mesh(merged,gravelMat);trap.name='Corner gravel traps';trap.receiveShadow=true;scene.add(trap);}}
   // Legacy tower bands and mullions removed; rebuilt tower profiles own these joints.
   // Redundant roof strips removed: the joined truss frame supplies the roof support.
   // Trees around the outer circuit, instanced for performance.
