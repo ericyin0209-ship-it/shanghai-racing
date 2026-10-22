@@ -5,7 +5,7 @@ import {conditionTyres,tyreOperatingRange} from './tyre-thermal.js';
 import {drawLocalMap} from './local-map.js';
 import {createPhotoStudio} from './photo-studio.js';
 import {snapshotVehicle,interpolateWheels} from './vehicle-snapshot.js';
-import {createCircuitInspection} from './circuit-inspection.js?v=218i';
+import {createCircuitInspection} from './circuit-inspection.js?v=225b';
 import {createCameraMotion} from './camera-motion.js';
 import {createEngineerRadio} from './engineer-radio.js';
 import {createGarageMedia} from './garage-media.js';
@@ -19,9 +19,9 @@ import {createDrivingAudio} from './driving-audio.js';
 import {createFrameBudget} from './frame-budget.js?v=223';
 import {createRoadEffects} from './road-effects.js?v=224';
 import * as THREE from 'three';
-import {createTrack} from './track.js?v=225';
+import {createTrack} from './track.js?v=225b';
 import {createCar,liveries,preloadCars} from './car.js';
-import {createWorld} from './world.js?v=225';
+import {createWorld} from './world.js?v=225b';
 import {createShowroom} from './showroom.js?v=221';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {CG_TO_MODEL_ORIGIN,createVehicle,resetVehicleMotion,stepVehicle,repairVehicle,resolveBarrierImpact,LapTimer,clamp,wrap,angle,grip,steeringLimit} from './physics.js?v=224';
@@ -153,7 +153,7 @@ function physics(dt){
   stepVehicle(vehicle,input,dt,{wetness:world.wetness,surface:(x,z)=>track.surface(x,z,world.wetness),offroad:near.distance>8.6,ambient:20});
   playerProfile.drive(Math.max(0,vehicle.distance-previousDistance));
   const after=track.nearest(vehicle.x,vehicle.z);vehicle.offroad=after.distance>8.6&&!track.isPitLane(vehicle.x,vehicle.z);
-  const edgeNormal=track.frames[after.index].normal,footprint=Math.abs(Math.sin(vehicle.yaw)*edgeNormal.x+Math.cos(vehicle.yaw)*edgeNormal.z)*2.85+Math.abs(Math.cos(vehicle.yaw)*edgeNormal.x-Math.sin(vehicle.yaw)*edgeNormal.z)*1.0,barrierOffset=Math.abs(track.foldSafeOffset(after.s,(Math.sign(after.offset)||1)*17.71))-.16-footprint;
+  const edgeNormal=track.frames[after.index].normal,footprint=Math.abs(Math.sin(vehicle.yaw)*edgeNormal.x+Math.cos(vehicle.yaw)*edgeNormal.z)*2.85+Math.abs(Math.cos(vehicle.yaw)*edgeNormal.x-Math.sin(vehicle.yaw)*edgeNormal.z)*1.0,barrierSide=(Math.sign(after.offset)||1)*17.71,barrierOffset=(track.barrierOpen(after.s,barrierSide)?17.71:Math.abs(track.foldSafeOffset(after.s,barrierSide)))-.16-footprint;
   if(after.distance>barrierOffset&&!pitService.active&&!track.isPitLane(vehicle.x,vehicle.z)){const side=Math.sign(after.offset)||1;vehicle.x=after.p.x+edgeNormal.x*clamp(after.offset,-barrierOffset+.02,barrierOffset-.02);vehicle.z=after.p.z+edgeNormal.z*clamp(after.offset,-barrierOffset+.02,barrierOffset-.02);const hit=resolveBarrierImpact(vehicle,{x:edgeNormal.x*side,z:edgeNormal.z*side});timer.valid=false;if(hit.normalSpeed>.5&&collisionCooldown===0){toast('碰到护栏 · 本圈无效');collisionCooldown=2;}}
   const lap=timer.update(after.s,dt,vehicle.offroad);timer.totalTime+=dt;tools.recorder.record(dt,vehicle,timer,world.captureConditions);
   if(lap){playerProfile.lap(lap);tools.lap(lap);toast(lap.valid?`第 ${lap.lap} 圈 · ${formatTime(lap.time)}`:`第 ${lap.lap} 圈无效 · 超出赛道或复位`);}

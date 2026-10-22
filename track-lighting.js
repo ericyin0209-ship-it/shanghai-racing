@@ -5,7 +5,7 @@ export function createTrackLighting(scene,track){
  const steel=new THREE.MeshStandardMaterial({color:'#78858b',metalness:.75,roughness:.42}),housing=new THREE.MeshStandardMaterial({color:'#344148',metalness:.65,roughness:.38}),lens=new THREE.MeshStandardMaterial({color:'#dce0dc',emissive:'#ffe9c5',emissiveIntensity:0,roughness:.35});
  const poleGeometry=new THREE.CylinderGeometry(.075,.11,12,12),headGeometry=new THREE.BoxGeometry(2.1,.2,.75),lensGeometry=new THREE.PlaneGeometry(1.92,.59),baseGeometry=new THREE.BoxGeometry(.55,.20,.55),fixtures=[];
  for(let index=0;index<48;index++){
-  const f=track.at(index*track.length/48,index%2?24:-24);
+  const f0=track.at(index*track.length/48,index%2?24:-24),f=f0.open?track.at(index*track.length/48,index%2?-24:24):f0;
   if(fixtures.some(p=>Math.hypot(p.x-f.p.x,p.z-f.p.z)<4))continue;
   const pole=new THREE.Mesh(poleGeometry,steel);pole.position.set(f.p.x,6,f.p.z);pole.name='Track lamp pole';pole.castShadow=true;root.add(pole);
   const base=new THREE.Mesh(baseGeometry,steel);base.position.set(f.p.x,.10,f.p.z);base.name='Track lamp base';root.add(base);

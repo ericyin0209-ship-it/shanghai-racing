@@ -6,31 +6,72 @@ export function ellipseLoft(profiles,segments=128){
  for(let r=0;r<profiles.length;r++){const [rx,rz,y]=profiles[r];for(let i=0;i<=segments;i++){const a=i/segments*Math.PI*2;v.push(Math.cos(a)*rx,y,Math.sin(a)*rz);uv.push(i/segments,r/(profiles.length-1));if(r&&i){const n=r*(segments+1)+i;idx.push(n,n-segments-1,n-1,n-1,n-segments-1,n-segments-2);}}}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();return g;
 }
+export const BRIDGE_AXIS_Y=33;
 export function createCircuitLandmarks(scene,standAxis){
  const root=new THREE.Group();root.name='Shanghai landmark architecture / 218';scene.add(root);const m=landmarkMaterials(),builder=createLandmarkBuilder(root),{box,beam}=builder,standFrame=standAxis.matrix;
  const structural={bridgeGlazingSegments:128,bridges:2,substructureConnected:true,standAxisShared:true};
  function mesh(name,g,mat,p){const o=new THREE.Mesh(g,mat);o.name=name;o.position.set(...p);o.castShadow=o.receiveShadow=true;root.add(o);return o;}
- const lower=ellipseLoft([[.1,.1,21.65],[40,10.5,21.65],[66,19.3,22.55],[75.7,26.7,23.33],[76,27,23.58]]),upper=ellipseLoft([[76,27,27.82],[75.9,26.9,28.09],[68,21.4,28.5],[.1,.1,28.75]]);
- const glazing=ellipseLoft([[69.9,22.9,23.65],[69.9,22.9,27.78]]);
- const floor=new THREE.CylinderGeometry(1,1,.18,96);floor.scale(69.4,1,22.5);
+ // preview.25 bridges: lens-shaped in elevation with pointed tips (photos 05/06/07/10), plan length ~150 m and
+ // width ~40 m from the 2018 satellite image. One central oval window band with visible Warren-truss
+ // members and two small eye windows per long face. Heights are photo estimates (±15%), not survey data.
+ const BL=76,section=48,stations=161;
+ const plan=u=>19*Math.pow(Math.max(0,1-Math.pow(Math.abs(u),5)),.5);
+ const shellTop=u=>BRIDGE_AXIS_Y+6.3*Math.pow(Math.max(0,1-u*u),.42),shellBottom=u=>BRIDGE_AXIS_Y-8.0*Math.pow(Math.max(0,1-u*u),.72);
+ const bridgeShell=(()=>{const pos=[],shell=[],idx=[];for(let i=0;i<stations;i++){const u=-Math.cos(Math.PI*i/(stations-1)),a=plan(u),top=shellTop(u),bottom=shellBottom(u),mid=(top+bottom)/2,hh=(top-bottom)/2;
+   for(let j=0;j<=section;j++){const th=j/section*Math.PI*2,c=Math.cos(th),s=Math.sin(th),e=2/6.5,cz=Math.sign(c)*Math.pow(Math.abs(c),e),sy=Math.sign(s)*Math.pow(Math.abs(s),e);pos.push(u*BL,mid+hh*sy,a*cz);shell.push(u,sy,Math.abs(cz));
+    if(i&&j){const k=i*(section+1)+j;idx.push(k,k-1,k-section-1,k-1,k-section-2,k-section-1);}}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('shellUV',new THREE.Float32BufferAttribute(shell,3));g.setIndex(idx);g.computeVertexNormals();return g;})();
+ const bridgeNight={value:0};
+ const shellMat=new THREE.MeshPhysicalMaterial({color:'#b3b8b8',metalness:.55,roughness:.32,clearcoat:.3,clearcoatRoughness:.22});
+ shellMat.onBeforeCompile=shader=>{shader.uniforms.bridgeNight=bridgeNight;
+  shader.vertexShader='attribute vec3 shellUV;varying vec3 vShell;varying vec3 vShellPos;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvShell=shellUV;vShellPos=position;');
+  shader.fragmentShader='varying vec3 vShell;varying vec3 vShellPos;uniform float bridgeNight;float glassMask;float trussLine;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+ float side=smoothstep(.80,.93,vShell.z);
+ vec2 q=vec2(vShell.x/.445,(vShell.y+.03)/.60);float r=length(q),aaR=fwidth(r)+1e-4;
+ vec2 q2=vec2((abs(vShell.x)-.635)/.072,(vShell.y-.10)/.30);float r2=length(q2),aaR2=fwidth(r2)+1e-4;
+ float main=1.-smoothstep(1.-aaR,1.,r),eye=1.-smoothstep(1.-aaR2,1.,r2);
+ glassMask=max(main,eye)*side;
+ float rim=max(smoothstep(.93-aaR,.93,r)*(1.-smoothstep(1.03,1.03+aaR,r)),smoothstep(.86-aaR2,.86,r2)*(1.-smoothstep(1.06,1.06+aaR2,r2)))*side;
+ float x=vShellPos.x;float bay=fract(x/6.4);float yN=clamp(vShell.y/.55*.5+.5,0.,1.);
+ float diag=abs(mod(floor(x/6.4),2.)<1.?bay-yN:1.-bay-yN);float fw=fwidth(x/6.4)+1e-4;
+ trussLine=max(1.-smoothstep(.035,.035+fw*1.5,diag),max(1.-smoothstep(.04,.04+fwidth(yN)*1.5,abs(yN-.08)),1.-smoothstep(.04,.04+fwidth(yN)*1.5,abs(yN-.92))));
+ float mull=1.-smoothstep(.03,.03+fwidth(x/1.6)*1.5,min(fract(x/1.6),1.-fract(x/1.6)));
+ trussLine*=main;float detail=1.-smoothstep(.04,.25,fw);
+ vec3 glassCol=mix(vec3(.30,.42,.44),vec3(.13,.17,.18),trussLine*detail*.9);glassCol*=1.-mull*.25*detail;
+ diffuseColor.rgb=mix(diffuseColor.rgb,glassCol,glassMask);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.84,.86,.85),rim*.8);
+ vec2 panel=vec2(x/3.2,vShell.y*7.);vec2 pj=min(fract(panel),1.-fract(panel))/(fwidth(panel)+1e-4);float joint=1.-min(1.,min(pj.x,pj.y)/1.5);diffuseColor.rgb*=1.-joint*.10*(1.-glassMask)*detail;`)
+  .replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.06,glassMask);')
+  .replace('#include <metalnessmap_fragment>','#include <metalnessmap_fragment>\nmetalnessFactor=mix(metalnessFactor,.18,glassMask);')
+  .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3(1.,.80,.56)*glassMask*(1.-trussLine)*bridgeNight*.85;');};
+ shellMat.customProgramCacheKey=()=> 'bridge-lens-shell-225';
+ const towerU=53/BL,towerTop=shellBottom(towerU)+.25;
+ const rounded=(w,d,r)=>{const s=new THREE.Shape(),x=w/2,z=d/2;s.moveTo(-x+r,-z);s.lineTo(x-r,-z);s.quadraticCurveTo(x,-z,x,-z+r);s.lineTo(x,z-r);s.quadraticCurveTo(x,z,x-r,z);s.lineTo(-x+r,z);s.quadraticCurveTo(-x,z,-x,z-r);s.lineTo(-x,-z+r);s.quadraticCurveTo(-x,-z,-x+r,-z);return s;};
+ const towerShape=rounded(15,13.5,4.2),towerBody=new THREE.ExtrudeGeometry(towerShape,{depth:towerTop-.55,bevelEnabled:false,curveSegments:10});towerBody.rotateX(-Math.PI/2);towerBody.translate(0,.55,0);
+ const bandShape=rounded(15.5,14,4.45);bandShape.holes.push(rounded(14.9,13.4,4.15));const band=new THREE.ExtrudeGeometry(bandShape,{depth:.22,bevelEnabled:false,curveSegments:10});band.rotateX(-Math.PI/2);
+ const towerPerimeter=towerShape.getSpacedPoints(44);
  for(const z of [-455,-57]){
-  mesh('Bridge sculpted aluminium underbelly',lower,m.ivory,[0,0,z]);mesh('Bridge tapered roof shell',upper,m.ivory,[0,0,z]);mesh('Bridge segmented reflective curtain wall',glazing,m.glass,[0,0,z]);mesh('Bridge recessed interior floor',floor,m.interior,[0,23.62,z]);mesh('Bridge suspended ceiling',floor,m.ivory,[0,27.72,z]);
-  for(let j=0;j<128;j++){const a=j*Math.PI/64,b=(j+1)*Math.PI/64,x=Math.cos(a)*70.02,zz=z+Math.sin(a)*23.02;
-   beam('bridge vertical mullions',[x,23.58,zz],[x,27.84,zz],.047,m.alloy);
-   for(const y of [23.68,25.75,27.70])beam('bridge curved transoms',[x,y,zz],[Math.cos(b)*70.02,y,z+Math.sin(b)*23.02],.04,m.alloy);
-   // Sealed edge flashings sit on the shell perimeter; no detached light strips.
-   beam('bridge drip edge',[Math.cos(a)*75.9,23.58,z+Math.sin(a)*26.9],[Math.cos(b)*75.9,23.58,z+Math.sin(b)*26.9],.055,m.alloy);
-   if(j%4===0){beam('bridge underside panel joint',[Math.cos(a)*45,21.83,z+Math.sin(a)*12.4],[Math.cos(a)*74.2,23.26,z+Math.sin(a)*25.7],.024,m.dark);}
-  }
-  for(let x=-58;x<=58;x+=5.8){box('bridge internal partition',[.10,2.8,12],[x,25.12,z],m.dark);box('bridge recessed ceiling lens',[3.2,.025,.25],[x,27.6175,z-9.2],m.glow);}
+  const shell=mesh('Bridge lens shell with oval glazing',bridgeShell,shellMat,[0,0,z]);shell.userData.surveyed=false;
   for(const x of [-53,53]){
    const t=new THREE.Group();t.position.set(x,0,z);root.add(t);const tb=createLandmarkBuilder(t);
-   // Spectator side (x>0): red cylindrical stair towers; team side: glass office towers (Tilke design notes, building.co.uk).
-   const towerWall=new THREE.CylinderGeometry(7.1,8,23.3,64,1,true),o=new THREE.Mesh(towerWall,x>0?(m.stairRed??=new THREE.MeshPhysicalMaterial({color:'#b5262b',metalness:.35,roughness:.38,clearcoat:.6,clearcoatRoughness:.25,side:THREE.DoubleSide})):m.warmGlass);o.position.y=11.9;o.castShadow=o.receiveShadow=true;t.add(o);
-   const plinth=new THREE.Mesh(new THREE.CylinderGeometry(8.25,8.6,.55,64),m.concrete);plinth.position.y=.275;t.add(plinth);
-   for(let j=0;j<40;j++){const a=j*Math.PI/20,xx=Math.cos(a),zz=Math.sin(a);tb.beam('tower curtain mullions',[xx*8,.55,zz*8],[xx*7.1,23.55,zz*7.1],.06,m.alloy);}
-   for(let k=1;k<=7;k++){const y=k*3.15+.4,r=8-(y/23.3)*.9;mesh('Tower continuous floor edge',ellipseLoft([[r+.12,r+.12,y-.10],[r+.12,r+.12,y+.10]],64),m.alloy,[x,0,z]);}
-   tb.box('tower entry threshold',[3.4,.10,2.5],[0,.10,8.5],m.paving);tb.box('tower entrance canopy',[4.5,.18,3.3],[0,3.05,8.7],m.ivory);for(const side of [-1,1])tb.box('tower entry frame',[.10,2.6,.10],[side*1.25,1.6,8.1],m.alloy);tb.box('tower door glass',[2.4,2.45,.06],[0,1.7,8.12],m.glass);tb.finish();
+   const plinth=new THREE.Mesh(new THREE.CylinderGeometry(8.6,8.9,.55,48),m.concrete);plinth.position.y=.275;t.add(plinth);
+   if(x<0){
+    // Pit side: rounded-rectangle glass office towers with continuous floor edges.
+    const o=new THREE.Mesh(towerBody,m.warmGlass);o.castShadow=o.receiveShadow=true;t.add(o);
+    for(let y=3.95;y<towerTop-1;y+=3.4){const b=new THREE.Mesh(band,m.alloy);b.position.y=y;t.add(b);}
+    for(const p of towerPerimeter.slice(0,-1))tb.beam('tower curtain mullions',[p.x*1.012,.55,-p.y*1.012],[p.x*1.012,towerTop-.1,-p.y*1.012],.05,m.alloy);
+    tb.box('tower entry threshold',[3.4,.10,2.5],[0,.10,8.0],m.paving);tb.box('tower entrance canopy',[4.5,.18,3.3],[0,3.05,8.2],m.ivory);for(const side of [-1,1])tb.box('tower entry frame',[.10,2.6,.10],[side*1.25,1.6,6.9],m.alloy);tb.box('tower door glass',[2.4,2.45,.06],[0,1.7,6.85],m.glass);
+   }else{
+    // Spectator side: open red braced frame around a stair core (photos 02/07); proportions estimated.
+    const red=m.stairRed??=new THREE.MeshPhysicalMaterial({color:'#b5262b',metalness:.35,roughness:.38,clearcoat:.6,clearcoatRoughness:.25});
+    // Clad red tower with a large framed opening on the faces toward the straight (photo 07).
+    const H=towerTop-.55,open0=H*.38,open1=H*.62;
+    tb.box('red tower cladding',[9.4,open0,13.3],[0,.55+open0/2,0],red);tb.box('red tower cladding',[9.4,H-open1,13.3],[0,.55+open1+(H-open1)/2,0],red);
+    for(const sx of [-1,1])tb.box('red tower cladding',[2.2,open1-open0,13.3],[sx*3.6,.55+(open0+open1)/2,0],red);
+    tb.box('red tower opening core',[5.0,open1-open0,12.4],[0,.55+(open0+open1)/2,0],m.concrete);
+    for(const sz of [-1,1]){tb.box('red tower opening frame',[5.4,.35,.4],[0,.55+open0,sz*6.55],m.ivory);tb.box('red tower opening frame',[5.4,.35,.4],[0,.55+open1,sz*6.55],m.ivory);for(const sx of [-1,1])tb.box('red tower opening frame',[.35,open1-open0,.4],[sx*2.55,.55+(open0+open1)/2,sz*6.55],m.ivory);}
+    tb.box('red tower entry threshold',[3.4,.10,2.5],[0,.10,8.6],m.paving);
+   }
+   tb.finish();
   }
  }
  // Panelised upper pit facade, metal reveal depth, sunshades and recessed joints.
@@ -61,5 +102,5 @@ export function createCircuitLandmarks(scene,standAxis){
  }
  for(let z=-421;z<-90;z+=28){box('promenade bench seat',[.65,.12,2.5],[87.6,.50,z],m.ivory,0,standFrame);for(const dz of [-.8,.8])box('bench grounded base',[.48,.44,.12],[87.6,.22,z+dz],m.dark,0,standFrame);box('promenade bollard',[.10,.84,.10],[81.8,.42,z+3.4],m.alloy,0,standFrame);box('bollard lens',[.11,.08,.11],[81.8,.77,z+3.4],m.glow,0,standFrame);}
  const stats={...builder.finish(),...structural};root.userData={...root.userData,...stats,reference:'Tilke Architecture Portfolio / Formula1 Shanghai site photographs',surveyed:false};
- return {root,stats,setNight(v){m.glow.emissiveIntensity=v*2.3;m.warmGlass.emissiveIntensity=v*.48;m.glass.emissive.set('#d7c2a0');m.glass.emissiveIntensity=v*.14;},setWetness(v){m.paving.roughness=.91-v*.38;m.paving.color.setRGB(.30-v*.04,.33-v*.04,.32-v*.04);}};
+ return {root,stats,setNight(v){bridgeNight.value=v;m.glow.emissiveIntensity=v*2.3;m.warmGlass.emissiveIntensity=v*.48;m.glass.emissive.set('#d7c2a0');m.glass.emissiveIntensity=v*.14;},setWetness(v){m.paving.roughness=.91-v*.38;m.paving.color.setRGB(.30-v*.04,.33-v*.04,.32-v*.04);}};
 }

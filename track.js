@@ -36,6 +36,9 @@ export async function createTrack(){
    const W=14;for(const arr of lim){const src=arr.slice(),minf=new Float32Array(n+1);for(let i=0;i<=n;i++){let m=1e9;for(let d=-W;d<=W;d++)m=Math.min(m,src[((i+d)%n+n)%n]);minf[i]=m;}for(let i=0;i<=n;i++){let sum=0;for(let d=-7;d<=7;d++)sum+=minf[((i+d)%n+n)%n];arr[i]=sum/15;}}
    return lim;})();
   function foldSafeOffset(s,offset){const a=Math.abs(offset);if(a<=7.3)return offset;const f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i,arr=sideLimits[offset>0?1:0],limit=arr[i]+(arr[Math.min(n,i+1)]-arr[i])*u;return a<=limit?offset:Math.sign(offset)*limit;}
+  // preview.25: on the inside of tight hairpins the fold-safe limit pulls far offsets onto the kerb edge.
+  // Those spans are treated as open infield: no barrier line, rails or fence (matches preview.22 physics).
+  function barrierOpen(s,offset){if(Math.abs(offset)<=12)return false;const f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i,arr=sideLimits[offset>0?1:0],limit=arr[i]+(arr[Math.min(n,i+1)]-arr[i])*u;return limit<13.5;}
   function offsetPoint(s,requested){const o=foldSafeOffset(s,requested),f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i,tx=frames[i].t.x+(frames[i+1].t.x-frames[i].t.x)*u,tz=frames[i].t.z+(frames[i+1].t.z-frames[i].t.z)*u,l=Math.hypot(tx,tz)||1;return {x:points[i].x+(points[i+1].x-points[i].x)*u+tz/l*o,z:points[i].z+(points[i+1].z-points[i].z)*u-tx/l*o};}
   function at(s,offset=0){const requested=offset;offset=foldSafeOffset(s,offset);
     const f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i;
@@ -44,7 +47,7 @@ export async function createTrack(){
     // Far from the centreline, orient objects along the offset path itself and report how
     // much longer/shorter that path is, so barriers and boards join without gaps or overlaps.
     if(Math.abs(offset)>3){const a=offsetPoint(s-1,requested),b=offsetPoint(s+1,requested),dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len>1e-4){yaw=Math.atan2(dx,dz);stretch=len/2;}}
-    return {p,t,normal,yaw,stretch,curvature:curvatures[i],s:wrap(s,length)};
+    return {p,t,normal,yaw,stretch,curvature:curvatures[i],s:wrap(s,length),open:barrierOpen(s,requested),clamped:Math.abs(offset-requested)>.01};
   }
   function nearest(x,z){
     const q=locator.query(x,z,queryScratch),s=wrap(q.s,length);
@@ -55,15 +58,17 @@ export async function createTrack(){
   function updateWater(dt,wet,focus){currentWet=wet;const decay=Math.exp(-dt*(wet>.5?.02:.008));if(dt>0)for(let i=0;i<n;i++)drying[i]*=decay;if(focus?.speed>8){const near=nearest(focus.x,focus.z),k=near.index;for(let j=-2;j<=2;j++){const i=(k+j+n)%n;dryOffsets[i]=near.offset;drying[i]=Math.min(.20,drying[i]+dt*.018);}}}
   function isPitLane(x,z){return x<-18&&x>-32&&z>-535&&z<35;}
   function surface(x,z,wet=currentWet){const near=nearest(x,z),localWet=Math.max(0,wet-drying[near.index]*Math.exp(-Math.pow(near.offset-dryOffsets[near.index],2)/5)),pit=isPitLane(x,z);return {...near,height:pit?.035:height(near.s,near.offset),...waterAt(near.s,near.offset,pit?wet:localWet,length),offroad:!pit&&Math.abs(near.offset)>8.35,curb:!pit&&Math.abs(near.offset)>7.2&&Math.abs(near.offset)<8.35};}
+  // A whole number of texture tiles per lap, so the asphalt texture meets itself at the start line (preview.25).
+  const seamUV=Math.round(length*.15)/length;
   function ribbon(inner,outer,heightOffset=.035,start=0,end=n,acrossOverride=0){
     const verts=[],uvs=[],idx=[],across=acrossOverride||(Math.abs(outer-inner)>2?8:2);
     for(let i=start;i<=end;i++)for(let j=0;j<=across;j++){
-      const s=i*length/n,off=foldSafeOffset(s,inner+(outer-inner)*j/across),p=points[i],normal=frames[i].normal;
+      const s=i*length/n,off=foldSafeOffset(s,inner+(outer-inner)*j/across),ii=i===n?0:i,p=points[ii],normal=frames[ii].normal;
       let y=height(s,off)+heightOffset-.035;if(heightOffset===.09)y=height(s,off);
-      verts.push(p.x+normal.x*off,y,p.z+normal.z*off);uvs.push(off*.15,s*.15);
+      verts.push(p.x+normal.x*off,y,p.z+normal.z*off);uvs.push(off*.15,s*seamUV);
       if(i<end&&j<across){const k=(i-start)*(across+1)+j;idx.push(k,k+across+1,k+1,k+1,k+across+1,k+across+2);}
     }
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));g.setIndex(idx);g.computeVertexNormals();return g;
   }
-  return {foldSafeOffset,data,calibration,curve,length,n,points,frames,at,nearest,ribbon,curvatures,height,surface,isPitLane,updateWater,drying,dryOffsets};
+  return {foldSafeOffset,barrierOpen,data,calibration,curve,length,n,points,frames,at,nearest,ribbon,curvatures,height,surface,isPitLane,updateWater,drying,dryOffsets};
 }

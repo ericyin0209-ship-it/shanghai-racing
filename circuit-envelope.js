@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createAccessBuilder,accessMaterials,addReturnStair} from './spectator-access.js';
+import {createAccessBuilder,accessMaterials,addReturnStair} from './spectator-access.js?v=225b';
 // Rear entrance architecture follows photographs; dimensions retain the existing site model.
 export function createCircuitEnvelope(scene){
  const root=new THREE.Group();root.name='Main grandstand enclosed rear and spectator circulation';scene.add(root);

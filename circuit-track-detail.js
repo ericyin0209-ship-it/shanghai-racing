@@ -7,7 +7,7 @@ export function formedRailGeometry(length){
 export function createTrackEnvironment(scene,track){
  const root=new THREE.Group();root.name='Circuit edge construction / 218';scene.add(root);const m=landmarkMaterials(),builder=createLandmarkBuilder(root),{box,beam}=builder;let seed=218;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  // Guard-rail joint details are now on the actual barrier line, never floating in front of it.
- for(let s=0;s<track.length;s+=10)for(const side of [-1,1]){const f=track.at(s,side*19),frame=new THREE.Matrix4().makeRotationY(f.yaw);frame.setPosition(f.p.x,0,f.p.z);
+ for(let s=0;s<track.length;s+=10)for(const side of [-1,1]){const f=track.at(s,side*19);if(f.open)continue;const frame=new THREE.Matrix4().makeRotationY(f.yaw);frame.setPosition(f.p.x,0,f.p.z);
   box('armco grounded backing post',[.12,.95,.16],[side*.16,.475,0],m.alloy,0,frame);
   box('armco base plate',[.38,.045,.34],[side*.16,.0225,0],m.concrete,0,frame);
   if(Math.floor(s/10)%4===0){beam('catch-fence connected overhang',[0,2.95,0],[-side*.32,3.22,0],.034,m.alloy,frame);}

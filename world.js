@@ -5,21 +5,21 @@ import {createWetReflection} from './wet-reflection.js?v=224';
 import {createWeatherRain} from './weather-rain.js?v=221';
 import {optimizeEnvironmentBatches} from './environment-batching.js?v=218i';
 import {createKerbSurfaces} from './circuit-kerbs.js?v=218i';
-import {createCircuitLandmarks} from './circuit-landmarks.js?v=225';
-import {createTrackEnvironment,formedRailGeometry} from './circuit-track-detail.js?v=218i';
+import {createCircuitLandmarks} from './circuit-landmarks.js?v=225b';
+import {createTrackEnvironment,formedRailGeometry} from './circuit-track-detail.js?v=225b';
 import {createPaddockDetail} from './circuit-paddock.js?v=221';
 import {constructionFinish} from './circuit-surface.js?v=218i';
 import {fitStandToStraight} from './stand-alignment.js?v=216';
 import {createSceneDetail} from './scene-detail.js?v=218i';
-import {createTrackLighting} from './track-lighting.js?v=222';
+import {createTrackLighting} from './track-lighting.js?v=225b';
 import {batchStaticMeshes} from './static-batching.js';
 import {snapShadowFocus} from './shadow-focus.js';
-import {createLotusGrandstands} from './lotus-grandstands.js?v=218i';
+import {createLotusGrandstands,nearLotus} from './lotus-grandstands.js?v=225b';
 import {createPitArchitecture} from './pit-architecture.js';
 import {waterRippleGLSL} from './water-ripples.js?v=221';
-import {createCircuitEnvelope,capturePitVista} from './circuit-envelope.js?v=218i';
+import {createCircuitEnvelope,capturePitVista} from './circuit-envelope.js?v=225b';
 import {partitionStaticInstances} from './spatial-batches.js?v=218i';
-import {createCircuitLifeDetail} from './circuit-livedetail.js?v=218i';
+import {createCircuitLifeDetail} from './circuit-livedetail.js?v=225b';
 import * as THREE from 'three';
 import {addGroundVariation} from './terrain-shading.js';
 import {createRainImpacts} from './rain-impact.js?v=221';
@@ -28,11 +28,11 @@ import {Sky} from './vendor/Sky.js';
 import {Reflector} from './vendor/Reflector.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {createSurroundings} from './surroundings.js?v=225';
-import {createCircuitDetailUpgrade} from './circuit-detail-upgrade.js?v=216';
-import {createTracksideDetails} from './trackside-details.js?v=225';
+import {createSurroundings} from './surroundings.js?v=225b';
+import {createCircuitDetailUpgrade} from './circuit-detail-upgrade.js?v=225b';
+import {createTracksideDetails} from './trackside-details.js?v=225b';
 import {createFoliage} from './foliage.js';
-import {createCircuitFinish} from './circuit-finish.js?v=218i';
+import {createCircuitFinish} from './circuit-finish.js?v=225b';
 import {createAtmosphere} from './atmosphere.js?v=221';
 import {solarPosition,clamp} from './physics.js?v=224';
 function seeded(seed=38){return ()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
@@ -77,12 +77,12 @@ export async function createWorld(scene,renderer,track){
   for(let i=0;i<24;i++){const s=-20-i*8.5,x=i%2?3:-3;for(let k=0;k<2;k++){obj.position.set(x+(k?1:-1),.07,s);obj.updateMatrix();grid.setMatrixAt(i*2+k,obj.matrix);}}scene.add(grid);
   // Armco follows the full source-coordinate circuit.
   const railMat=new THREE.MeshStandardMaterial({color:'#b4babc',metalness:.65,roughness:.45});
-  const railLength=5,railPlacements=[];for(const side of [-1,1]){const path=[];for(let s=0;s<=track.length;s+=1)path.push(track.at(Math.min(s,track.length-.001),side*19).p);const cumulative=[0];for(let k=1;k<path.length;k++)cumulative.push(cumulative[k-1]+Math.hypot(path[k].x-path[k-1].x,path[k].z-path[k-1].z));const total=cumulative.at(-1),pieces=Math.max(1,Math.round(total/railLength)),piece=total/pieces;let k=0;const pointAt=d=>{while(k<cumulative.length-2&&cumulative[k+1]<d)k++;const u=(d-cumulative[k])/Math.max(1e-6,cumulative[k+1]-cumulative[k]);return {x:path[k].x+(path[k+1].x-path[k].x)*u,z:path[k].z+(path[k+1].z-path[k].z)*u};};for(let j=0;j<pieces;j++){k=Math.max(0,k-3);const a=pointAt(j*piece),b=pointAt((j+1)*piece),dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.05)continue;railPlacements.push({x:(a.x+b.x)/2,z:(a.z+b.z)/2,yaw:Math.atan2(dx,dz),stretch:len/(railLength*.998)});}}const rails=new THREE.InstancedMesh(formedRailGeometry(railLength*.998),railMat,railPlacements.length);railPlacements.forEach((r,i)=>{obj.position.set(r.x,.48,r.z);obj.rotation.set(0,r.yaw,0);obj.scale.set(1,1,r.stretch);obj.updateMatrix();rails.setMatrixAt(i,obj.matrix);});obj.scale.set(1,1,1);
+  const railLength=5,railPlacements=[];for(const side of [-1,1]){const path=[];for(let s=0;s<=track.length;s+=1)path.push(track.at(Math.min(s,track.length-.001),side*19).p);const cumulative=[0];for(let k=1;k<path.length;k++)cumulative.push(cumulative[k-1]+Math.hypot(path[k].x-path[k-1].x,path[k].z-path[k-1].z));const total=cumulative.at(-1),pieces=Math.max(1,Math.round(total/railLength)),piece=total/pieces;let k=0;const pointAt=d=>{while(k<cumulative.length-2&&cumulative[k+1]<d)k++;const u=(d-cumulative[k])/Math.max(1e-6,cumulative[k+1]-cumulative[k]);return {x:path[k].x+(path[k+1].x-path[k].x)*u,z:path[k].z+(path[k+1].z-path[k].z)*u};};for(let j=0;j<pieces;j++){k=Math.max(0,k-3);const a=pointAt(j*piece),b=pointAt((j+1)*piece),dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);if(len<.05)continue;if(track.barrierOpen(k,side*19))continue;railPlacements.push({x:(a.x+b.x)/2,z:(a.z+b.z)/2,yaw:Math.atan2(dx,dz),stretch:len/(railLength*.998)});}}const rails=new THREE.InstancedMesh(formedRailGeometry(railLength*.998),railMat,railPlacements.length);railPlacements.forEach((r,i)=>{obj.position.set(r.x,.48,r.z);obj.rotation.set(0,r.yaw,0);obj.scale.set(1,1,r.stretch);obj.updateMatrix();rails.setMatrixAt(i,obj.matrix);});obj.scale.set(1,1,1);
   rails.castShadow=true;rails.receiveShadow=true;scene.add(rails);
   const fenceTexture=texture(1024,(c,s)=>{c.clearRect(0,0,s,s);c.strokeStyle='#81888a';c.lineWidth=4;for(let i=-s;i<s*2;i+=64){c.beginPath();c.moveTo(i,0);c.lineTo(i+s,s);c.stroke();c.beginPath();c.moveTo(i,0);c.lineTo(i-s,s);c.stroke();}});
   fenceTexture.anisotropy=renderer.capabilities.getMaxAnisotropy();
   const fenceMat=new THREE.MeshStandardMaterial({map:fenceTexture,transparent:false,alphaTest:.4,alphaToCoverage:true,roughness:.8,metalness:.18,side:THREE.DoubleSide});
-  for(const side of [-1,1]){const p=[],uv=[],idx=[];for(let i=0;i<=track.n;i+=4){const q=track.at(i/track.n*track.length,side*19).p,x=q.x,z=q.z;p.push(x,.85,z,x,2.8,z);uv.push(i/track.n*track.length/2,0,i/track.n*track.length/2,1);const j=p.length/3-2;if(j>=2)idx.push(j-2,j,j-1,j-1,j,j+1);}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();scene.add(new THREE.Mesh(g,fenceMat));}
+  for(const side of [-1,1]){const p=[],uv=[],idx=[];let prevOpen=false;for(let i=0;i<=track.n;i+=4){const sAt=i/track.n*track.length,q=track.at(sAt,side*19).p,x=q.x,z=q.z,open=track.barrierOpen(sAt,side*19);p.push(x,.85,z,x,2.8,z);uv.push(sAt/2,0,sAt/2,1);const j=p.length/3-2;if(j>=2&&!open&&!prevOpen)idx.push(j-2,j,j-1,j-1,j,j+1);prevOpen=open;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();scene.add(new THREE.Mesh(g,fenceMat));}
   // Pit apron and garages: visual prototypes, dimensions pending survey.
   const pitAsphalt=new THREE.MeshStandardMaterial({color:'#9b9f9e',map:asphaltTex,normalMap:asphaltNormal,normalScale:new THREE.Vector2(.09,.09),roughness:.87});pitAsphalt.userData.metricTile=3.0;box(26,.1,535,-32,.00,-257,pitAsphalt);
   box(2.2,1.1,510,-14.6,.55,-260,concrete);
@@ -114,7 +114,9 @@ export async function createWorld(scene,renderer,track){
   for(let j=0;j<15;j++){const x=j%2?34:54,z=-85-j*24;const lining=new THREE.Mesh(new THREE.CylinderGeometry(2.7,2.7,1.1,48,1,true),lanternMats[j%3]);lining.position.set(x,23.5+Math.pow((x-40)/30,2)*1.5,z);standAssembly.add(lining);}
   for(let j=0;j<19;j++){const z=-76-j*19.5;box(.55,24.6,.55,70,12.3,z,steel,standAssembly);}
   // Elliptical bridges are rebuilt as closed shells and connected curtain-wall systems.
-  createLotusGrandstands(scene,track,seatShell);
+  // preview.25: the 26 lotus canopies sit 15 m+ from the racing line; a 4-segment, unbevelled shell keeps the same profile at ~1/9 of the triangles.
+  const lotusSeat=new THREE.ExtrudeGeometry(seatProfile,{depth:.46,bevelEnabled:false,steps:1,curveSegments:4});lotusSeat.translate(0,0,-.23);lotusSeat.rotateY(Math.PI/2);lotusSeat.userData.seatShell=true;
+  await createLotusGrandstands(scene,track,lotusSeat);
   // Garage facade details: window mullions, door ribs, utility boxes and roof rails.
   // Facade mullions come from the single bay-aligned detail set below.
   for(let i=0;i<30;i++){const z=-42-i*14.4;// The shutters are rolled into the head casing; no ribs across the open bay.
@@ -126,7 +128,7 @@ box(.25,.8,.28,-35.4,1.4,z+5.9,new THREE.MeshStandardMaterial({color:'#b62e33',r
   const signalMaterials=[];
   for(let i=0;i<5;i++){const mat=new THREE.MeshStandardMaterial({color:'#250909',emissive:'#ff1005',emissiveIntensity:.1});const m=new THREE.Mesh(new THREE.SphereGeometry(.13,12,8),mat);m.position.set(-1.2+i*.6,4.7,3.6);scene.add(m);signalMaterials.push(mat);}
   // Sponsor-free distance boards.
-  for(const [s,labelText] of [[110,'100'],[60,'150'],[track.length*.87,'150'],[track.length*.88,'100'],[track.length*.89,'50']]){const f=track.at(s,10);const m=sign(labelText,2,1.3,f.p.x,1.6,f.p.z,f.yaw+Math.PI,'#253329','#eee9da');m.castShadow=true;}
+  // preview.25: the duplicate board set here was removed; circuit-livedetail places boards from corner entries.
   // Gravel and service-edge furniture informed by Tilke aerial photographs; extents approximate.
   const gravelTex=texture(512,(c,size)=>{c.fillStyle='#b1a38b';c.fillRect(0,0,size,size);for(let i=0;i<30000;i++){const grey=135+random()*60;c.fillStyle='rgb('+grey+','+(grey*.94)+','+(grey*.82)+')';c.fillRect(random()*size,random()*size,1+random()*3,1+random()*3);}},70),gravelMat=new THREE.MeshStandardMaterial({map:gravelTex,color:'#d3c8b1',roughness:1});
   {// Gravel traps sit inside the barrier on the outside of corners, as continuous runs (one draw call).
@@ -134,7 +136,7 @@ gravelMat.polygonOffset=true;gravelMat.polygonOffsetFactor=-2;gravelMat.polygonO
   // Legacy tower bands and mullions removed; rebuilt tower profiles own these joints.
   // Redundant roof strips removed: the joined truss frame supplies the roof support.
   // Trees around the outer circuit, instanced for performance.
-  const trees=[];for(let i=0;i<1300;i++){const x=(random()-.5)*2600,z=-500+(random()-.5)*2500;if(track.nearest(x,z).distance>45&&!context.developed(x,z)&&!(x>-65&&x<80&&z>-530&&z<100))trees.push({x,z,h:6+random()*7});if(trees.length>=490)break;}
+  const trees=[];for(let i=0;i<1300;i++){const x=(random()-.5)*2600,z=-500+(random()-.5)*2500;if(track.nearest(x,z).distance>45&&!context.developed(x,z)&&!nearLotus(x,z,8)&&!(x>-65&&x<80&&z>-530&&z<100))trees.push({x,z,h:6+random()*7});if(trees.length>=490)break;}
   const crownParts=[[-1.6,.1,0,2.9],[1.4,.7,.5,3.0],[0,2.6,-.6,2.6],[.4,-1.3,-1.5,2.6]].map(([x,y,z,r])=>{const g=new THREE.IcosahedronGeometry(r,1);g.translate(x,y,z);return g;});const crownGeometry=mergeGeometries(crownParts,false);crownParts.forEach(g=>g.dispose());const crowns=new THREE.InstancedMesh(crownGeometry,new THREE.MeshStandardMaterial({color:'#355c3b',roughness:1}),trees.length),trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.23,.35,4,5),new THREE.MeshStandardMaterial({color:'#514d3f',roughness:1}),trees.length);
   trees.forEach((p,i)=>{obj.position.set(p.x,p.h*.62,p.z);obj.scale.set(p.h/9,p.h/9,p.h/9);obj.rotation.set(0,random()*Math.PI,0);obj.updateMatrix();crowns.setMatrixAt(i,obj.matrix);crowns.setColorAt(i,new THREE.Color().setHSL(.27+random()*.08,.22,.18+random()*.14));obj.position.y=2;obj.scale.set(1,1,1);obj.updateMatrix();trunks.setMatrixAt(i,obj.matrix);});scene.add(trunks);crowns.geometry.dispose();crowns.material.dispose();createFoliage(scene,trees,random);
   // Track lighting is a simulation option; not a surveyed lighting installation.

@@ -49,23 +49,25 @@ export function addReturnStair(builder,{x,z,levels,materials,frame=identity,name
  }
  return {x,z,levels:levels.slice(),flights,bridgeZ:z-landingZ,landingZ,frame:frame.toArray()};
 }
-export function addLotusAccess(builder,frame,materials,index){
- const {box}=builder,{concrete,dark,metal,cladding,glass}=materials;
+export function addLotusAccess(builder,frame,materials,index,width=33){
+ const L=width-1.4,H=width/2;
+ const {box}=builder,{concrete,metal,cladding}=materials,dark=materials.infill??=new THREE.MeshStandardMaterial({color:'#5d6667',roughness:.9});
  const levels=[.24,5.69,10.86],stair=addReturnStair(builder,{x:-13.4,z:0,levels,materials,frame,name:'Lotus access'});
  for(const level of levels){
-  box('Lotus enclosed concourse floors',[6.1,.28,31.6],[-6.35,level-.14,0],concrete,frame);
+  box('Lotus enclosed concourse floors',[6.1,.28,L],[-6.35,level-.14,0],concrete,frame);
   box('Lotus stair-to-concourse bridge',[1.5,.24,1.86],[-10.1,level-.12,stair.bridgeZ],concrete,frame);
  }
- for(const zz of [-15.9,15.9])box('Lotus concrete end walls',[6.1,13.4,.24],[-6.35,6.8,zz],concrete,frame);
+ for(const zz of [-(H-.6),H-.6])box('Lotus concrete end walls',[6.1,13.4,.24],[-6.35,6.8,zz],concrete,frame);
  // Segmented facade with a ground entrance and an open portal into each stair landing.
- for(let bay=0;bay<8;bay++){
-  const zz=-14+bay*4;
-  box('Lotus rear cladding piers',[.18,10.7,.22],[-9.47,5.7,zz-1.9],metal,frame);
-  const cut=(intervals)=>{let pieces=[[zz-1.85,zz+1.85]];for(const [lo,hi]of intervals)pieces=pieces.flatMap(([a,b])=>hi<=a||lo>=b?[[a,b]]:[[a,Math.max(a,lo)],[Math.min(b,hi),b]].filter(([l,r])=>r-l>.02));return pieces;};
+ const bays=Math.max(2,Math.round(L/4)),bayW=L/bays;
+ for(let bay=0;bay<bays;bay++){
+  const zz=-L/2+bayW*(bay+.5),hb=bayW/2-.15;
+  box('Lotus rear concrete piers',[.7,10.7,.55],[-9.3,5.7,zz-bayW/2+.1],concrete,frame);
+  const cut=(intervals)=>{let pieces=[[zz-hb,zz+hb]];for(const [lo,hi]of intervals)pieces=pieces.flatMap(([a,b])=>hi<=a||lo>=b?[[a,b]]:[[a,Math.max(a,lo)],[Math.min(b,hi),b]].filter(([l,r])=>r-l>.02));return pieces;};
   const portal=[stair.bridgeZ-1.1,stair.bridgeZ+1.1];
-  for(const [a,b]of cut([portal,[-1.6,1.6]]))box('Lotus rear mesh panels',[.12,4.4,b-a],[-9.49,3.05,(a+b)/2],cladding,frame);
-  for(const [a,b]of cut([portal])){box('Lotus upper mesh panels',[.12,4.65,b-a],[-9.49,8.25,(a+b)/2],cladding,frame);box('Lotus top gallery screen',[.12,2.65,b-a],[-9.49,12.1,(a+b)/2],cladding,frame);}
-  if(bay%2===0)box('Lotus concourse glazing',[.14,1.12,2.6],[-9.57,7.5,zz],glass,frame);
+  // Open concrete frame (rear elevation photo 08): recessed dark infill behind slab edges and piers.
+  for(const [a,b]of cut([portal,[-1.6,1.6]]))box('Lotus rear recessed infill',[.12,4.4,b-a],[-8.9,3.05,(a+b)/2],dark,frame);
+  for(const [a,b]of cut([portal])){box('Lotus rear recessed infill',[.12,4.65,b-a],[-8.9,8.25,(a+b)/2],dark,frame);box('Lotus top gallery screen',[.12,1.1,b-a],[-9.49,11.55,(a+b)/2],cladding,frame);}
  }
  box('Lotus sheltered entrance header',[.38,.7,3.5],[-9.65,3.0,0],concrete,frame);
  for(const zz of [-1.75,1.75])box('Lotus entrance jambs',[.38,2.9,.20],[-9.65,1.55,zz],concrete,frame);
@@ -73,15 +75,13 @@ export function addLotusAccess(builder,frame,materials,index){
  for(const xx of [-16.85,-9.95]){
   for(const zz of [-4.24,4.24])box('Lotus stair enclosure corners',[.22,13.6,.22],[xx,6.9,zz],concrete,frame);
  }
- box('Lotus stair rear wall',[.18,13.45,8.5],[-16.85,6.9,0],concrete,frame);
  for(const zz of [-4.25,4.25]){
   box('Lotus stair side sill',[6.8,1.15,.14],[-13.4,.82,zz],metal,frame);
-  box('Lotus stair side glazing',[6.75,11.0,.10],[-13.4,7.1,zz],glass,frame);
   for(const level of levels)box('Lotus access floor bands',[6.8,.20,.20],[-13.4,level-.1,zz],metal,frame);
-  for(const offset of [-2.25,-.75,.75,2.25])box('Lotus access mullions',[.075,11,.16],[-13.4+offset,7.1,zz],metal,frame);
  }
  box('Lotus access tower roof',[7.25,.2,9.05],[-13.4,13.7,0],metal,frame);
- box('Lotus concourse roof',[6.6,.18,32.2],[-6.5,13.65,0],metal,frame);
- box('Lotus spectator rear apron',[13.8,.12,32.4],[-10.4,.06,0],concrete,frame);
+ for(const level of levels.slice(1))box('Lotus rear slab edges',[.6,.38,width-1.4],[-9.35,level-.21,0],concrete,frame);
+ box('Lotus concourse roof',[6.6,.18,width-.8],[-6.5,13.65,0],metal,frame);
+ box('Lotus spectator rear apron',[13.8,.12,width-.6],[-10.4,.06,0],concrete,frame);
  return {...stair,unit:index,topConcourse:10.86,roofUnderside:13.56};
 }
