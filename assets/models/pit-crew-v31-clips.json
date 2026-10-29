@@ -1,0 +1,254 @@
+{
+ "gun_ready_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "gun_ready_R": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "gun_engage_L": {
+  "duration": 0.36,
+  "loop": false
+ },
+ "gun_engage_R": {
+  "duration": 0.36,
+  "loop": false
+ },
+ "gun_hold_L": {
+  "duration": 0.6,
+  "loop": true
+ },
+ "gun_hold_R": {
+  "duration": 0.6,
+  "loop": true
+ },
+ "gun_back_L": {
+  "duration": 0.18,
+  "loop": false
+ },
+ "gun_back_R": {
+  "duration": 0.18,
+  "loop": false
+ },
+ "gun_reengage_L": {
+  "duration": 0.16,
+  "loop": false
+ },
+ "gun_reengage_R": {
+  "duration": 0.16,
+  "loop": false
+ },
+ "gun_signal_rise_L": {
+  "duration": 0.9,
+  "loop": false
+ },
+ "gun_signal_rise_R": {
+  "duration": 0.9,
+  "loop": false
+ },
+ "off_ready_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "off_ready_R": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "off_grab_L": {
+  "duration": 0.2,
+  "loop": false
+ },
+ "off_grab_R": {
+  "duration": 0.2,
+  "loop": false
+ },
+ "off_pull_L": {
+  "duration": 0.8,
+  "loop": false
+ },
+ "off_pull_R": {
+  "duration": 0.8,
+  "loop": false
+ },
+ "off_release_L": {
+  "duration": 0.5,
+  "loop": false
+ },
+ "off_release_R": {
+  "duration": 0.5,
+  "loop": false
+ },
+ "on_ready_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "on_ready_R": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "on_fit_L": {
+  "duration": 0.72,
+  "loop": false
+ },
+ "on_fit_R": {
+  "duration": 0.72,
+  "loop": false
+ },
+ "on_hold_L": {
+  "duration": 0.5,
+  "loop": true
+ },
+ "on_hold_R": {
+  "duration": 0.5,
+  "loop": true
+ },
+ "on_release_L": {
+  "duration": 0.6,
+  "loop": false
+ },
+ "on_release_R": {
+  "duration": 0.6,
+  "loop": false
+ },
+ "fjack_ready": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "fjack_lift": {
+  "duration": 0.26,
+  "loop": false
+ },
+ "fjack_hold": {
+  "duration": 0.6,
+  "loop": true
+ },
+ "fjack_drop": {
+  "duration": 0.16,
+  "loop": false
+ },
+ "fjack_out": {
+  "duration": 0.9,
+  "loop": false
+ },
+ "fjack_idle": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "rjack_ready": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "rjack_lift": {
+  "duration": 0.26,
+  "loop": false
+ },
+ "rjack_hold": {
+  "duration": 0.6,
+  "loop": true
+ },
+ "rjack_drop": {
+  "duration": 0.16,
+  "loop": false
+ },
+ "rjack_out": {
+  "duration": 0.5,
+  "loop": false
+ },
+ "rjack_idle": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "stab_wait_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "stab_wait_R": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "stab_in_L": {
+  "duration": 0.45,
+  "loop": false
+ },
+ "stab_in_R": {
+  "duration": 0.45,
+  "loop": false
+ },
+ "stab_hold_L": {
+  "duration": 0.6,
+  "loop": true
+ },
+ "stab_hold_R": {
+  "duration": 0.6,
+  "loop": true
+ },
+ "stab_out_L": {
+  "duration": 0.6,
+  "loop": false
+ },
+ "stab_out_R": {
+  "duration": 0.6,
+  "loop": false
+ },
+ "chief_idle": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "chief_signal": {
+  "duration": 0.5,
+  "loop": false
+ },
+ "walk": {
+  "duration": 1.0,
+  "loop": true
+ },
+ "carry_walk": {
+  "duration": 1.0,
+  "loop": true
+ },
+ "stand": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "tyre_pickup": {
+  "duration": 1.0,
+  "loop": false
+ },
+ "tyre_setdown": {
+  "duration": 1.15,
+  "loop": false
+ },
+ "gun_clear_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "gun_clear_R": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "off_clear_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "off_clear_R": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "on_clear_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "on_clear_R": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "stab_clear_L": {
+  "duration": 2.0,
+  "loop": true
+ },
+ "stab_clear_R": {
+  "duration": 2.0,
+  "loop": true
+ }
+}

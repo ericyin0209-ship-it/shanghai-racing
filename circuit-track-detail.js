@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {landmarkMaterials,createLandmarkBuilder} from './circuit-surface.js?v=218i';
+import {landmarkMaterials,createLandmarkBuilder} from './circuit-surface.js?v=229release';
 export function formedRailGeometry(length){
  const outline=[[-.04,-.35],[.10,-.32],[.10,-.24],[-.015,-.15],[-.015,-.08],[.105,.02],[.105,.11],[-.015,.20],[-.015,.27],[.10,.33],[.10,.35],[-.065,.35],[-.065,-.35]];
  const s=new THREE.Shape();s.moveTo(...outline[0]);for(const p of outline.slice(1))s.lineTo(...p);s.closePath();const g=new THREE.ExtrudeGeometry(s,{depth:length,bevelEnabled:false,curveSegments:1});g.translate(0,0,-length/2);g.userData.environmentLOD=[new THREE.BoxGeometry(.17,.70,length),new THREE.BoxGeometry(.17,.70,length)];g.userData.lodMetricSize=.7;return g;
@@ -10,7 +10,6 @@ export function createTrackEnvironment(scene,track){
  for(let s=0;s<track.length;s+=10)for(const side of [-1,1]){const f=track.at(s,side*19);if(f.open)continue;const frame=new THREE.Matrix4().makeRotationY(f.yaw);frame.setPosition(f.p.x,0,f.p.z);
   box('armco grounded backing post',[.12,.95,.16],[side*.16,.475,0],m.alloy,0,frame);
   box('armco base plate',[.38,.045,.34],[side*.16,.0225,0],m.concrete,0,frame);
-  if(Math.floor(s/10)%4===0){beam('catch-fence connected overhang',[0,2.95,0],[-side*.32,3.22,0],.034,m.alloy,frame);}
  }
  // Small, sparse rubber marbles stay outside the white line; never obscure guidance.
  const marbleGeo=new THREE.IcosahedronGeometry(1,0),marbles=[];for(let i=0;i<3000;i++){const s=random()*track.length,j=Math.floor(s/track.length*track.n);if(track.curvatures[j]<.004&&random()<.8)continue;const off=(random()<.5?-1:1)*(7.27+random()*.98),f=track.at(s,off);marbles.push({f,scale:[.006+random()*.012,.003+random()*.005,.010+random()*.022],yaw:random()*Math.PI});}

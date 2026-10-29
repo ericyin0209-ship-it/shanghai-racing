@@ -1,7 +1,9 @@
 import * as THREE from 'three';
-import {createTrackLocator} from './track-locator.js';
-import {wrap} from './physics.js?v=224';
-import {surfaceHeight,waterAt} from './road-surface.js';
+import {createTrackLocator} from './track-locator.js?v=229release';
+import {wrap} from './physics.js?v=229release';
+import {surfaceHeight,waterAt,setKerbMask,bridgeCover,BRIDGE_DRY} from './road-surface.js?v=229release';
+import {createSurfaceMap,LOOSE_SURFACES} from './track-surfaces.js?v=229release';
+import {createPitLane} from './pit-lane.js?v=p34-20261029-r3';
 export async function createTrack(){
   const data=await fetch('./track-data.json').then(r=>{if(!r.ok)throw Error('无法读取赛道数据');return r.json()});
   const curve=new THREE.CatmullRomCurve3(data.points.map(([x,z])=>new THREE.Vector3(x,0,z)),true,'centripetal');
@@ -38,7 +40,7 @@ export async function createTrack(){
   function foldSafeOffset(s,offset){const a=Math.abs(offset);if(a<=7.3)return offset;const f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i,arr=sideLimits[offset>0?1:0],limit=arr[i]+(arr[Math.min(n,i+1)]-arr[i])*u;return a<=limit?offset:Math.sign(offset)*limit;}
   // preview.25: on the inside of tight hairpins the fold-safe limit pulls far offsets onto the kerb edge.
   // Those spans are treated as open infield: no barrier line, rails or fence (matches preview.22 physics).
-  function barrierOpen(s,offset){if(Math.abs(offset)<=12)return false;const f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i,arr=sideLimits[offset>0?1:0],limit=arr[i]+(arr[Math.min(n,i+1)]-arr[i])*u;return limit<13.5;}
+  function barrierOpen(s,offset){if(Math.abs(offset)<=12)return false;if(offset<0&&pit?.inRange(s))return true;const f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i,arr=sideLimits[offset>0?1:0],limit=arr[i]+(arr[Math.min(n,i+1)]-arr[i])*u;return limit<13.5;}
   function offsetPoint(s,requested){const o=foldSafeOffset(s,requested),f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i,tx=frames[i].t.x+(frames[i+1].t.x-frames[i].t.x)*u,tz=frames[i].t.z+(frames[i+1].t.z-frames[i].t.z)*u,l=Math.hypot(tx,tz)||1;return {x:points[i].x+(points[i+1].x-points[i].x)*u+tz/l*o,z:points[i].z+(points[i+1].z-points[i].z)*u-tx/l*o};}
   function at(s,offset=0){const requested=offset;offset=foldSafeOffset(s,offset);
     const f=wrap(s,length)/length*n,i=Math.floor(f),u=f-i;
@@ -56,8 +58,10 @@ export async function createTrack(){
   function height(s,offset=0){return surfaceHeight(s,offset,length);}
   const drying=new Float32Array(n),dryOffsets=new Float32Array(n);let currentWet=0;
   function updateWater(dt,wet,focus){currentWet=wet;const decay=Math.exp(-dt*(wet>.5?.02:.008));if(dt>0)for(let i=0;i<n;i++)drying[i]*=decay;if(focus?.speed>8){const near=nearest(focus.x,focus.z),k=near.index;for(let j=-2;j<=2;j++){const i=(k+j+n)%n;dryOffsets[i]=near.offset;drying[i]=Math.min(.20,drying[i]+dt*.018);}}}
-  function isPitLane(x,z){return x<-18&&x>-32&&z>-535&&z<35;}
-  function surface(x,z,wet=currentWet){const near=nearest(x,z),localWet=Math.max(0,wet-drying[near.index]*Math.exp(-Math.pow(near.offset-dryOffsets[near.index],2)/5)),pit=isPitLane(x,z);return {...near,height:pit?.035:height(near.s,near.offset),...waterAt(near.s,near.offset,pit?wet:localWet,length),offroad:!pit&&Math.abs(near.offset)>8.35,curb:!pit&&Math.abs(near.offset)>7.2&&Math.abs(near.offset)<8.35};}
+  // preview.28: the pit road (entry, lane, exit) from pit-lane.js; it replaces the old rectangle beside the garages
+  let pit=null;function isPitLane(x,z){return !!pit?.onRoad(x,z,.3);}
+  let surfaces=null;
+  function surface(x,z,wet=currentWet){const near=nearest(x,z),cover=1-BRIDGE_DRY*bridgeCover(x,z),localWet=Math.max(0,wet-drying[near.index]*Math.exp(-Math.pow(near.offset-dryOffsets[near.index],2)/5))*cover,pit=isPitLane(x,z);const water=waterAt(near.s,near.offset,pit?wet*cover:localWet,length),type=pit?'asphalt':surfaces.typeAt(near.s,near.offset);return {...near,height:pit?.035:height(near.s,near.offset),...water,surfaceType:type,surfaceGrip:surfaces.grip(type,water.wetness),offroad:LOOSE_SURFACES.has(type),curb:type==='kerb'};}
   // A whole number of texture tiles per lap, so the asphalt texture meets itself at the start line (preview.25).
   const seamUV=Math.round(length*.15)/length;
   function ribbon(inner,outer,heightOffset=.035,start=0,end=n,acrossOverride=0){
@@ -66,9 +70,11 @@ export async function createTrack(){
       const s=i*length/n,off=foldSafeOffset(s,inner+(outer-inner)*j/across),ii=i===n?0:i,p=points[ii],normal=frames[ii].normal;
       let y=height(s,off)+heightOffset-.035;if(heightOffset===.09)y=height(s,off);
       verts.push(p.x+normal.x*off,y,p.z+normal.z*off);uvs.push(off*.15,s*seamUV);
-      if(i<end&&j<across){const k=(i-start)*(across+1)+j;idx.push(k,k+across+1,k+1,k+1,k+across+1,k+across+2);}
+      // preview.27: wind by direction so a ribbon from -8 to -11 faces up like one from 8 to 11; before, every
+      // negative-side ribbon (left verge, left edge line, left-hand corner gravel) faced down and was culled.
+      if(i<end&&j<across){const k=(i-start)*(across+1)+j;if(outer>=inner)idx.push(k,k+across+1,k+1,k+1,k+across+1,k+across+2);else idx.push(k,k+1,k+across+1,k+1,k+across+2,k+across+1);}
     }
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));g.setIndex(idx);g.computeVertexNormals();return g;
   }
-  return {foldSafeOffset,barrierOpen,data,calibration,curve,length,n,points,frames,at,nearest,ribbon,curvatures,height,surface,isPitLane,updateWater,drying,dryOffsets};
+  const api={foldSafeOffset,barrierOpen,data,calibration,curve,length,n,points,frames,at,nearest,ribbon,curvatures,height,surface,isPitLane,updateWater,drying,dryOffsets};pit=createPitLane(api);api.pitLane=pit;surfaces=createSurfaceMap(api,pit);setKerbMask(surfaces.kerbAt);api.surfaces=surfaces;return api;
 }

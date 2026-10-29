@@ -1,4 +1,4 @@
-import {upgradeRows} from './upgrade-language.js';
+import {upgradeRows} from './upgrade-language.js?v=229release';
 export const languages=['zh-CN','en','fr','ja','ko'];
 const rows=[
 ['载入失败，请重试。','Loading failed. Please try again.','Échec du chargement. Réessayez.','読み込みに失敗しました。もう一度お試しください。','불러오지 못했습니다. 다시 시도해 주세요.'],

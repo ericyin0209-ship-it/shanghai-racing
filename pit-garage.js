@@ -1,12 +1,12 @@
-import {weatherLighting} from './weather-state.js?v=221';
+import {weatherLighting} from './weather-state.js?v=229release';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
-import {createRainImpacts} from './rain-impact.js?v=221';
-import {createGarageRain,gradeWetApron} from './rain-grade.js?v=221';
-import {createSpareWheel} from './car.js';
+import {createRainImpacts} from './rain-impact.js?v=229release';
+import {createGarageRain,gradeWetApron} from './rain-grade.js?v=229release';
+import {createSpareWheel} from './car.js?v=229release';
 import * as THREE from 'three';
-import {addGarageDetails} from './garage-detail.js';
-import {createGarageReflector,isolateGarageReflectors} from './garage-reflections.js?v=221';
-import {createGlassWater} from './glass-water.js?v=221';
+import {addGarageDetails} from './garage-detail.js?v=229release';
+import {createGarageReflector,isolateGarageReflectors} from './garage-reflections.js?v=229release';
+import {createGlassWater} from './glass-water.js?v=229release';
 import {RectAreaLightUniformsLib} from './vendor/RectAreaLightUniformsLib.js';
 // A self-contained pit interior and a small weather courtyard, independent of the circuit scene.
 export function createPitGarage(scene){
@@ -72,6 +72,11 @@ export function createPitGarage(scene){
  // produce broad, moving paint highlights rather than point-source hot spots.
  const roomLights=[];for(const z of [-3,1,5,9])for(const x of [-3.5,3.5]){const l=new THREE.RectAreaLight('#edf8f5',7.5,2.7,.30);l.position.set(x,4.25,z);l.lookAt(x,0,z);scene.add(l);roomLights.push(l);}
  for(const x of [-6.70,6.70]){const l=new THREE.RectAreaLight('#d2e9ff',3.5,.7,2.4);l.position.set(x,2.7,1);l.lookAt(0,1,1);scene.add(l);roomLights.push(l);}
+ // preview.27: every RectAreaLight costs a full LTC evaluation per lit pixel; with 11 the garage ran ~20 FPS at pixel ratio 1
+ // on the M1. Balanced/adaptive quality swaps the 8 lenses and 2 wall panels for one strip per lens row (same total flux,
+ // flatter paint highlights); high/ultra keep the individual lenses.
+ const lensLights=roomLights.slice(),mergedLights=[];for(const x of [-3.5,3.5]){const l=new THREE.RectAreaLight('#ecf6f4',7.5*4*2.7*.3/(2.7*12.3)+3.5*.7*2.4/(2.7*12.3),2.7,12.3);l.position.set(x,4.25,3);l.lookAt(x,0,3);l.visible=false;scene.add(l);mergedLights.push(l);}
+ let lightDetail='full';
  const horizonGround=box(group,0,-.14,100,3200,.12,3200,mat('#526151',0,.96));horizonGround.castShadow=false;
  const nightFixtures=[];for(const x of [-90,-45,45,90]){box(group,x,6,61,.14,12,.14,aluminium);const l=box(group,x,12,61,1.4,.07,.25,lightMat);l.castShadow=false;l.userData.batchExclude=true;nightFixtures.push(l);}
  // Fine raindrops outside the glass. Trails use stretched sprites, kept off the indoor floor.
@@ -80,8 +85,9 @@ export function createPitGarage(scene){
  let rainfall=0,isNight=false;
  function setEnvironment(weather,hour){const lighting=weatherLighting(weather,hour);for(const mirror of reflectors)mirror.forceUpdate=true;const cloud={clear:0,cloudy:.38,overcast:.85,rain:.9,storm:1}[weather]??0;rainfall=weather==='storm'?1:weather==='rain'?.6:0;isNight=hour>=19||hour<5;const twilight=!isNight&&(hour<8||hour>16);const top=isNight?'#071326':twilight?'#45657d':cloud>.8?'#566873':'#548fc3',bottom=isNight?'#182a3b':twilight?'#deb591':cloud>.8?'#a6b3b7':'#d6e9ed';const gradient=ctx.createLinearGradient(0,0,0,1024);gradient.addColorStop(0,top);gradient.addColorStop(1,bottom);ctx.fillStyle=gradient;ctx.fillRect(0,0,2048,1024);let seed=47;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};for(let i=0;i<30+Math.floor(cloud*90);i++){const x=random()*2048,y=140+random()*650,r=70+random()*210;const cloudGradient=ctx.createRadialGradient(x,y,0,x,y,r);const brightness=cloud>.8?'112,126,135':'240,246,246';cloudGradient.addColorStop(0,`rgba(${brightness},${(isNight?.03:.08)+cloud*.14})`);cloudGradient.addColorStop(1,`rgba(${brightness},0)`);ctx.fillStyle=cloudGradient;ctx.fillRect(x-r,y-r,r*2,r*2);}if(isNight&&cloud<.8){ctx.fillStyle='#c4d4e7';for(let i=0;i<100;i++)ctx.fillRect(random()*2048,random()*650,1.3,1.3);}skyTex.needsUpdate=true;seatMat.color.set(isNight?'#251018':'#8c3434');roof.material.color.set(isNight?'#34414b':'#d4d8d2');outsideFacade.color.set(isNight?'#111d29':twilight?'#858f90':'#a1aaa8');outsideWindows.emissive.set(isNight?'#b5d3c6':'#000000');outsideWindows.emissiveIntensity=isNight?.32:0;apronMat.color.set(isNight?'#1a252d':rainfall?'#3e5059':'#657173');outsideLight.intensity=lighting.sunIntensity*.32;windowLight.intensity=lighting.twilight*(1.55-cloud*.85);windowLight.color.set(lighting.dusk>.1?'#ffe0bf':'#dce9f3');if(sky.material.uniforms?.sunDirection){const direction=sky.material.uniforms.sunDirection.value.clone().applyAxisAngle(new THREE.Vector3(0,1,0),-Math.PI/2);outsideLight.position.copy(direction).multiplyScalar(80).add(new THREE.Vector3(0,0,10));}outsideLight.color.set(twilight?'#ffe1b4':'#d7edff');apronMat.roughness=rainfall? .18:.65;apronMat.metalness=.025;exteriorRain.set(rainfall);gradeApron(rainfall);water.setRain(rainfall);waterHighlights.material.uniforms.rain.value=rainfall;glazingReflection.material.uniforms.strength.value=.075+lighting.night*.36;glazingReflection.material.uniforms.hasWater.value=rainfall>0?1:0;wetReflection.visible=rainfall>0;wetReflection.material.uniforms.strength.value=rainfall*.36;glass.normalScale.setScalar(rainfall>0?.8:0);for(const fixture of nightFixtures)fixture.visible=isNight||cloud>.8;if(circuitExterior)circuitExterior.traverse(o=>{const m=o.material;if(m?.emissive&&m.emissive.getHex()!==0)m.emissiveIntensity=isNight?2.0:0;});}
  function update(dt){circuitExterior?.userData.updateWeather?.(dt);gradeApron.update(dt);water.update(dt);const beadWetness=Math.max(rainfall,water.wetness);glass.normalScale.setScalar(.8*beadWetness);waterHighlights.material.uniforms.rain.value=beadWetness;glazingReflection.material.uniforms.hasWater.value=beadWetness>0?1:0;for(const mirror of reflectors)mirror.material.uniforms.time.value+=dt;exteriorRain.update(dt);apronImpacts.update(dt,{x:0,z:30},rainfall,rainfall);if(sky.material.uniforms?.clock)sky.material.uniforms.clock.value+=dt;}
- function setVisible(visible){group.visible=visible;outsideLight.visible=visible;for(const l of roomLights)l.visible=visible;}
+ function setVisible(visible){group.visible=visible;outsideLight.visible=visible;for(const l of roomLights)l.visible=visible&&(l===windowLight||!lensLights.includes(l)||lightDetail==='full');for(const l of mergedLights)l.visible=visible&&lightDetail!=='full';}
+ function setLightDetail(detail){lightDetail=detail;setVisible(group.visible);}
  function constrainCamera(camera,target){target.x=THREE.MathUtils.clamp(target.x,-6.0,6.0);target.y=THREE.MathUtils.clamp(target.y,.12,3.9);target.z=THREE.MathUtils.clamp(target.z,-4.8,9.5);camera.position.x=THREE.MathUtils.clamp(camera.position.x,-6.5,6.5);camera.position.y=THREE.MathUtils.clamp(camera.position.y,.12,4.15);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-4.85,10.05);if(Math.abs(camera.position.x)>3.30&&Math.abs(camera.position.x)<6.05&&camera.position.z<-4.12&&camera.position.y<2.6)camera.position.z=-4.12;camera.lookAt(target);}
  let circuitExterior=null;function setCircuitExterior(vista){circuitExterior=vista;group.add(vista);if(vista.userData.skyMaterial){sky.material=vista.userData.skyMaterial;sky.rotation.y=-Math.PI/2;}for(const mirror of reflectors)mirror.forceUpdate=true;}
- setEnvironment('clear',12.5);return {setCircuitExterior,group,setEnvironment,update,setVisible,constrainCamera,reflectors,water,emissiveFixtures};
+ setEnvironment('clear',12.5);return {setCircuitExterior,group,setEnvironment,update,setVisible,setLightDetail,constrainCamera,reflectors,water,emissiveFixtures};
 }

@@ -1,9 +1,9 @@
-import {weatherLighting,weatherMistRGB} from './weather-state.js?v=221';
-import {batchStaticMeshes} from './static-batching.js';
+import {weatherLighting,weatherMistRGB} from './weather-state.js?v=229release';
+import {batchStaticMeshes} from './static-batching.js?v=229release';
 import * as THREE from 'three';
-import {createPitGarage} from './pit-garage.js?v=221';
+import {createPitGarage} from './pit-garage.js?v=229release';
 import {HDRLoader} from './vendor/HDRLoader.js';
-import {upgradeGarageEquipment} from './precision-garage.js';
+import {upgradeGarageEquipment} from './precision-garage.js?v=229release';
 export async function createShowroom(renderer){
   const scene=new THREE.Scene();scene.background=new THREE.Color('#11151c');
   const pmrem=new THREE.PMREMGenerator(renderer);const hdr=await new HDRLoader().loadAsync('assets/textures/studio.hdr');const env=pmrem.fromEquirectangular(hdr);scene.environment=env.texture;scene.environmentIntensity=.65;hdr.dispose();
@@ -31,5 +31,5 @@ export async function createShowroom(renderer){
  function setTunnel(enabled){
   if(enabled!==tunnel){const shadow=key.shadow,c=shadow.camera;if(enabled){garageShadow={size:shadow.mapSize.clone(),left:c.left,right:c.right,top:c.top,bottom:c.bottom};const size=Math.max(512,Math.round(shadow.mapSize.x*3/8));shadow.mapSize.set(size,size);c.left=c.bottom=-3;c.right=c.top=3;}else if(garageShadow){shadow.mapSize.copy(garageShadow.size);Object.assign(c,{left:garageShadow.left,right:garageShadow.right,top:garageShadow.top,bottom:garageShadow.bottom});garageShadow=null;}c.updateProjectionMatrix();shadow.map?.dispose();shadow.map=null;}
   tunnel=enabled;key.shadow.autoUpdate=false;key.shadow.needsUpdate=true;scene.environment=enabled?env.texture:(roomEnvironment?.texture||env.texture);reflectionDirty=!enabled;for(const o of garageObjects)o.visible=!enabled;pitGarage.setVisible(!enabled);}function setBrandVisible(visible){logo.visible=visible;}
-return {setCircuitExterior:pitGarage.setCircuitExterior,scene,key,setBrand,setTunnel,setBrandVisible,setEnvironment,prepareReflections,update:pitGarage.update,constrainCamera:pitGarage.constrainCamera};
+return {setCircuitExterior:pitGarage.setCircuitExterior,setLightDetail:pitGarage.setLightDetail,scene,key,setBrand,setTunnel,setBrandVisible,setEnvironment,prepareReflections,update:pitGarage.update,constrainCamera:pitGarage.constrainCamera};
 }

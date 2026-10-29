@@ -1,7 +1,0 @@
-{
-  "name": "shanghai-circuit-simulator",
-  "version": "2.0.0-preview.25",
-  "type": "module",
-  "private": true,
-  "description": "Local Shanghai driving build with attributed high-detail concept car and PBR assets."
-}

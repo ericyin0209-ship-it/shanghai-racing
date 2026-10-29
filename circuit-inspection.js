@@ -1,4 +1,4 @@
-import {lotusViews} from './lotus-grandstands.js?v=225b';
+import {lotusViews} from './lotus-grandstands.js?v=229release';
 export function createCircuitInspection(camera,controls,getTrack=()=>null){
  const poses={overview:{label:'场地全景',eye:[-320,240,260],target:[0,12,-250],fov:39},stand:{label:'主看台',eye:[-2,3,-290],target:[44,16,-265],fov:56},pit:{label:'维修区',eye:[-12,2.2,-230],target:[-36,5.6,-256],fov:54},bridge:{label:'玻璃桥',eye:[0,3.2,-120],target:[0,24.5,-57],fov:60}};
  poses.paddock={label:'水上建筑',eye:[-230,18,-200],target:[-135,3,-240],fov:52};

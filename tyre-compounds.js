@@ -34,7 +34,7 @@ export function createWetTreadGeometry(width,fullWet){
 const treadCache=new Map();
 export function createTyreCompounds(wheels,inkMaterials){
   const wetSets=wheels.map((spin,index)=>{
-    const original=spin.children.filter(o=>o.name.endsWith('-tread'));
+    const holder=spin.userData.assembly||spin,original=holder.children.filter(o=>o.name.endsWith('-tread'));
     const material=original[0]?.material;if(!material)return null;
     const set={original,intermediate:null,wet:null};
     set.ensure=compound=>{
@@ -43,7 +43,7 @@ export function createTyreCompounds(wheels,inkMaterials){
       const width=index<2?.335:.429,key=width+':'+compound;
       if(!treadCache.has(key)){const geometry=createWetTreadGeometry(width,compound==='wet');geometry.userData.shared=true;treadCache.set(key,geometry);}
       const mesh=new THREE.Mesh(treadCache.get(key),rubber);
-      mesh.name='AMR23 '+compound+' tread';mesh.castShadow=mesh.receiveShadow=true;mesh.visible=false;spin.add(mesh);set[compound]=mesh;return mesh;
+      mesh.name='AMR23 '+compound+' tread';mesh.castShadow=mesh.receiveShadow=true;mesh.visible=false;holder.add(mesh);set[compound]=mesh;return mesh;
     };
     return set;
   });

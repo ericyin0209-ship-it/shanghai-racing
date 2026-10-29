@@ -16,15 +16,15 @@ export function createTyreDust(wheels){
   for(let j=0;j<7;j++){ctx.fillStyle='rgba(127,124,112,.18)';ctx.beginPath();ctx.ellipse(random()*512,random()*256,7+random()*12,1.2+random()*3,random()*.8,0,Math.PI*2);ctx.fill();}
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
   const material=new THREE.MeshStandardMaterial({map:texture,color:'#b4ac98',roughness:.94,transparent:true,opacity:0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1});
-  const original=wheels[i].children.find(o=>o.name.endsWith('-tread'));
-  const mesh=new THREE.Mesh(original?fittedDustGeometry(original.geometry):new THREE.BufferGeometry(),material);mesh.name='Tyre dust / rotating tread';mesh.visible=false;wheels[i].add(mesh);overlays.push(mesh);
+  const holder=wheels[i].userData.assembly||wheels[i],original=holder.children.find(o=>o.name.endsWith('-tread'));
+  const mesh=new THREE.Mesh(original?fittedDustGeometry(original.geometry):new THREE.BufferGeometry(),material);mesh.name='Tyre dust / rotating tread';mesh.visible=false;holder.add(mesh);overlays.push(mesh);
  }
  return {update(dt,v,wet,enabled){
   for(let i=0;i<4;i++){
-   const target=enabled&&v.speed>.5?Math.min(.55,.10+(v.distance||0)/10000+(v.offroad?.20:0))*(1-wet*.82):0;
+   const target=enabled&&v.speed>.5?Math.min(.55,.10+(v.distance||0)/10000+((v.surfaceType==='gravel'||v.surfaceType==='grass'?.20:0)))*(1-wet*.82):0;
    amounts[i]+=(target-amounts[i])*(1-Math.exp(-dt*(target>amounts[i]?.3:1.2)));
    const mesh=overlays[i];mesh.visible=enabled&&amounts[i]>.002;mesh.material.opacity=amounts[i];
-   if(mesh.visible){const tread=wheels[i].children.find(o=>o.visible&&(o.name.endsWith('-tread')||/^AMR23 (intermediate|wet) tread$/.test(o.name)));if(tread)mesh.geometry=fittedDustGeometry(tread.geometry);}
+   if(mesh.visible){const tread=(wheels[i].userData.assembly||wheels[i]).children.find(o=>o.visible&&(o.name.endsWith('-tread')||/^AMR23 (intermediate|wet) tread$/.test(o.name)));if(tread)mesh.geometry=fittedDustGeometry(tread.geometry);}
   }
  },reset(){amounts.fill(0);for(const mesh of overlays)mesh.visible=false;}};
 }

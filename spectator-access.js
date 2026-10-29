@@ -51,7 +51,7 @@ export function addReturnStair(builder,{x,z,levels,materials,frame=identity,name
 }
 export function addLotusAccess(builder,frame,materials,index,width=33){
  const L=width-1.4,H=width/2;
- const {box}=builder,{concrete,metal,cladding}=materials,dark=materials.infill??=new THREE.MeshStandardMaterial({color:'#5d6667',roughness:.9});
+ const {box}=builder,{concrete,metal,cladding}=materials,dark=materials.infill??=new THREE.MeshStandardMaterial({color:'#3a4142',roughness:.95});
  const levels=[.24,5.69,10.86],stair=addReturnStair(builder,{x:-13.4,z:0,levels,materials,frame,name:'Lotus access'});
  for(const level of levels){
   box('Lotus enclosed concourse floors',[6.1,.28,L],[-6.35,level-.14,0],concrete,frame);
@@ -66,8 +66,9 @@ export function addLotusAccess(builder,frame,materials,index,width=33){
   const cut=(intervals)=>{let pieces=[[zz-hb,zz+hb]];for(const [lo,hi]of intervals)pieces=pieces.flatMap(([a,b])=>hi<=a||lo>=b?[[a,b]]:[[a,Math.max(a,lo)],[Math.min(b,hi),b]].filter(([l,r])=>r-l>.02));return pieces;};
   const portal=[stair.bridgeZ-1.1,stair.bridgeZ+1.1];
   // Open concrete frame (rear elevation photo 08): recessed dark infill behind slab edges and piers.
-  for(const [a,b]of cut([portal,[-1.6,1.6]]))box('Lotus rear recessed infill',[.12,4.4,b-a],[-8.9,3.05,(a+b)/2],dark,frame);
-  for(const [a,b]of cut([portal])){box('Lotus rear recessed infill',[.12,4.65,b-a],[-8.9,8.25,(a+b)/2],dark,frame);box('Lotus top gallery screen',[.12,1.1,b-a],[-9.49,11.55,(a+b)/2],cladding,frame);}
+  // The openings read as deep shadow under the rake in photo 08, so the infill sits 1.4 m behind the pier faces.
+  for(const [a,b]of cut([portal,[-1.6,1.6]]))box('Lotus rear recessed infill',[.12,4.4,b-a],[-7.9,3.05,(a+b)/2],dark,frame);
+  for(const [a,b]of cut([portal])){box('Lotus rear recessed infill',[.12,4.65,b-a],[-7.9,8.25,(a+b)/2],dark,frame);box('Lotus top gallery screen',[.12,1.1,b-a],[-9.49,11.55,(a+b)/2],cladding,frame);}
  }
  box('Lotus sheltered entrance header',[.38,.7,3.5],[-9.65,3.0,0],concrete,frame);
  for(const zz of [-1.75,1.75])box('Lotus entrance jambs',[.38,2.9,.20],[-9.65,1.55,zz],concrete,frame);

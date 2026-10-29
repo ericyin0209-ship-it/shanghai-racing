@@ -1,7 +1,7 @@
-import {stepBrakeThermal} from './brake-thermal.js';
-import {conditionTyres,stepTyreThermal} from './tyre-thermal.js';
+import {stepBrakeThermal} from './brake-thermal.js?v=229release';
+import {conditionTyres,stepTyreThermal} from './tyre-thermal.js?v=229release';
 // SI units. Four contact patches; development coefficients, not Aston Martin telemetry.
-import {wheelAngles,relaxContactAngle} from './vehicle-kinematics.js';
+import {wheelAngles,relaxContactAngle} from './vehicle-kinematics.js?v=229release';
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const wrap=(v,l)=>((v%l)+l)%l;
 export const angle=v=>Math.atan2(Math.sin(v),Math.cos(v));
@@ -12,6 +12,7 @@ export function grip(wetness,temp=85,wear=0,compound='medium'){
  const tempScale=clamp(1-Math.abs(temp-(compound==='wet'?65:compound==='intermediate'?75:90))*.004,.65,1);
  return rain*dryPenalty*tempScale*(1-.28*wear)*(compound==='soft'?1.045:compound==='hard'?.955:1);
 }
+export const enginePower=rpm=>rpm>12000?clamp(1-(rpm-12000)/5000,.85,1):clamp(.45+.55*Math.sin(Math.PI/2*clamp((rpm-4000)/6500,0,1)),.45,1);
 export const steeringLimit=speed=>.46/(1+speed*.016);
 // AMR23 / 2023 regulations: 3600 mm wheelbase, 44.5–46.0 % static front weight (Aston Martin
 // technical specification). Use 45.25 %: centre of gravity 1.971 m behind the front axle.
@@ -40,8 +41,13 @@ export function resolveBarrierImpact(v,outwardNormal){
  const tx=(vx-nx*normalSpeed)*.97,tz=(vz-nz*normalSpeed)*.97;
  const afterX=tx-nx*normalSpeed*.035,afterZ=tz-nz*normalSpeed*.035;
  v.speed=Math.max(0,afterX*si+afterZ*co);v.lateralSpeed=afterX*co-afterZ*si;
- v.yawRate*=.75;v.slip=Math.atan2(v.lateralSpeed,Math.max(1,v.speed));
- impactVehicle(v,normalSpeed,{location});return {normalSpeed,location};
+ // preview.27: the contact point turns the car. Wall impulse acts at the corner nearest the wall (front/rear axle line,
+ // out to the side in proportion to the impact angle); a head-on hit gives no yaw, an angled front-corner hit swings the tail. Scaled for a short
+ // crushing contact and capped, estimates rather than crash data.
+ const side=co*nx-si*nz,arm=location==='front'?1.9:location==='rear'?-1.75:0,rx=si*arm+co*.8*side,rz=co*arm-si*.8*side;
+ const kick=clamp(798*normalSpeed*1.035*(-nx*rz+nz*rx)/1300*.15,-1.2,1.2);
+ v.yawRate=v.yawRate*.75+kick;v.slip=Math.atan2(v.lateralSpeed,Math.max(1,v.speed));
+ impactVehicle(v,normalSpeed,{location});return {normalSpeed,location,yawKick:kick};
 }
 function springStep(value,velocity,target,frequency,dt){const acceleration=(target-value)*frequency*frequency-velocity*frequency*1.90;velocity+=acceleration*dt;return [value+velocity*dt,velocity];}
 export function stepVehicle(v,input,dt,environment){
@@ -52,14 +58,16 @@ export function stepVehicle(v,input,dt,environment){
  const frontAero=clamp(.43+(settings.frontWing-settings.rearWing)*.003-v.damage.frontWing*.13,.27,.58);
  const transferLong=clamp(-v.longitudinalAcceleration*mass*.30/3.6,-1100,1100),transferLat=clamp(v.lateralAcceleration*mass*.30/1.62,-1700,1700);
  let mean=0,offCount=0,forceSide=0,forceForward=0,moment=0,appliedDrive=0;
- const speed=Math.max(.1,v.speed),power=480000*(v.energy>.05?1:.85)*(v.fuel>0?1:0),drive=Math.min(10500,power/Math.max(18,speed))*v.throttle;
+ // preview.27: power follows engine speed, so the gear in use matters (a lugging gear in manual pulls less). Estimated
+ // shape, not AMR23 data: ~62% at 6000 rpm, full from ~10500 to 12000, easing past the limiter.
+ const speed=Math.max(.1,v.speed),power=480000*enginePower(v.rpm)*(v.energy>.05?1:.85)*(v.fuel>0?1:0),drive=Math.min(10500,power/Math.max(18,speed))*v.throttle;
  const braking=mass*(22+speed*speed*.00065)*v.brake;
  const frontAngles=wheelAngles(v.steer,3.6,1.665);
  for(let i=0;i<4;i++){
   const w=v.wheels[i],front=i<2,wx=v.x+co*w.x+si*w.z,wz=v.z-si*w.x+co*w.z;
   const surface=environment.surface?.(wx,wz)||{height:.035,wetness:wet,depth:0,gripScale:1,offroad:environment.offroad,curb:false};
 
-  w.roadHeight=surface.height;w.curb=surface.curb;w.waterDepth=surface.depth||0;mean+=surface.height*.25;offCount+=surface.offroad?1:0;
+  w.roadHeight=surface.height;w.curb=surface.curb;w.surfaceType=surface.surfaceType||(surface.offroad?'grass':'asphalt');w.waterDepth=surface.depth||0;mean+=surface.height*.25;offCount+=surface.offroad?1:0;
   const staticLoad=mass*gravity*(front?REAR_ARM:FRONT_ARM)/3.6/2;
   const aero=v.downforce*(front?frontAero:1-frontAero)/2;
   const pitchHeight=-w.z*v.pitch,rollHeight=w.x*v.roll;
@@ -70,7 +78,7 @@ export function stepVehicle(v,input,dt,environment){
   const load=staticLoad+aero+(front?transferLong:-transferLong)*.5+(w.x<0?transferLat:-transferLat)*.5+suspension*.25;
   w.load=Math.max(0,load)*(1-v.damage.suspension*.2);w.contact=w.load>50;
   const pressureFactor=clamp(1-Math.abs(w.pressure-24)*.018,.8,1),aquaplane=clamp(w.waterDepth*speed*speed*(settings.compound==='wet'?.035:settings.compound==='intermediate'?.075:.18),0,.65);
-  const mu=1.70*(front?AXLE_GRIP[0]:AXLE_GRIP[1])*grip(surface.wetness??wet,w.temperature,w.wear,settings.compound)*pressureFactor*(surface.offroad?.38:1)*(surface.gripScale??1)*(1-aquaplane);
+  const mu=1.70*(front?AXLE_GRIP[0]:AXLE_GRIP[1])*grip(surface.wetness??wet,w.temperature,w.wear,settings.compound)*pressureFactor*(surface.surfaceGrip??(surface.offroad?.38:1))*(surface.gripScale??1)*(1-aquaplane);
   const limit=Math.max(1,w.load*mu*Math.pow(Math.max(.25,w.load/2000),-.12));
   const longitudinal=speed-v.yawRate*w.x,lateral=v.lateralSpeed+v.yawRate*w.z,steer=front?(i===0?frontAngles.left:frontAngles.right)*(1-v.damage.suspension*.12):0;
   const alpha=angle(steer-Math.atan2(lateral,Math.max(2,longitudinal)));w.slipAngle=alpha;
@@ -99,7 +107,9 @@ export function stepVehicle(v,input,dt,environment){
  const oldSpeed=v.speed,drag=(.72+wing*.35)*speed*speed+.018*mass*gravity+(offCount?offCount*320:0);
  v.speed=clamp(v.speed+(forceForward-drag)/mass*dt,0,v.pitLimiter?80/3.6:98);
  const yawAcceleration=moment/1300,vYaw=v.yawRate+yawAcceleration*dt,maxYaw=1.8;
- v.yawRate=clamp(vYaw,-maxYaw,maxYaw);v.lateralSpeed=clamp(v.lateralSpeed+(forceSide/mass-v.speed*v.yawRate)*dt,-v.speed*.5,v.speed*.5);
+ v.yawRate=clamp(vYaw,-maxYaw,maxYaw);// preview.27: the old hard +-0.5 clamp capped every slide at 26.6 deg; the bound now sits at 45 deg so slides develop
+ // and recover through tyre forces, and only a spin beyond that is held (the model has no reverse-sliding state).
+ v.lateralSpeed=clamp(v.lateralSpeed+(forceSide/mass-v.speed*v.yawRate)*dt,-v.speed,v.speed);
  if(v.speed<2){const target=v.speed*Math.tan(v.steer)/3.6;v.yawRate+=(target-v.yawRate)*(1-Math.exp(-dt*12));v.lateralSpeed*=Math.exp(-dt*8);}
  v.longitudinalAcceleration=(v.speed-oldSpeed)/dt;v.lateralAcceleration=forceSide/mass;v.slip=Math.atan2(v.lateralSpeed,Math.max(1,v.speed));v.frontSlip=(v.wheels[0].slipAngle+v.wheels[1].slipAngle)/2;v.rearSlip=(v.wheels[2].slipAngle+v.wheels[3].slipAngle)/2;
  v.yaw=angle(v.yaw+v.yawRate*dt);v.x+=(Math.sin(v.yaw)*v.speed+Math.cos(v.yaw)*v.lateralSpeed)*dt;v.z+=(Math.cos(v.yaw)*v.speed-Math.sin(v.yaw)*v.lateralSpeed)*dt;
@@ -111,9 +121,9 @@ export function stepVehicle(v,input,dt,environment){
  // Stiff F1 platform: about 1° nose-down at full braking and under 1° of roll at peak cornering (estimates).
  const targetPitch=clamp((rearMean-frontMean)/3.6-v.longitudinalAcceleration*.00042*stiffness*aeroPlatform,-.02,.02),targetRoll=clamp((v.wheels[0].roadHeight+v.wheels[2].roadHeight-v.wheels[1].roadHeight-v.wheels[3].roadHeight)/3.33+v.lateralAcceleration*.00034*stiffness*aeroPlatform,-.016,.016);
  [v.pitch,v.pitchVelocity]=springStep(v.pitch,v.pitchVelocity,targetPitch,13,dt);[v.roll,v.rollVelocity]=springStep(v.roll,v.rollVelocity,targetRoll,14,dt);
- v.temperature=v.wheels.reduce((a,w)=>a+w.temperature,0)/4;v.wear=v.wheels.reduce((a,w)=>a+w.wear,0)/4;v.offroad=offCount>1;v.distance+=v.speed*dt;
+ v.temperature=v.wheels.reduce((a,w)=>a+w.temperature,0)/4;v.wear=v.wheels.reduce((a,w)=>a+w.wear,0)/4;v.offroad=offCount>1;{const c={};for(const w of v.wheels)c[w.surfaceType]=(c[w.surfaceType]||0)+1;v.surfaceType=Object.keys(c).sort((a,b)=>c[b]-c[a])[0]||'asphalt';}v.distance+=v.speed*dt;
  v.energy=clamp(v.energy+dt*(v.brake*.016-v.throttle*.005),0,1);v.fuel=Math.max(0,v.fuel-dt*(.005+v.throttle*.016));
- const gearSpeeds=[0,15,24,33,43,54,65,77,98];if(!v.manual){if(v.speed<.4&&v.throttle<.05)v.gear=0;else{v.gear=Math.max(1,v.gear);if(v.gear<8&&v.speed>gearSpeeds[v.gear]*.94)v.gear++;if(v.gear>1&&v.speed<gearSpeeds[v.gear-1]*.84)v.gear--;}}
+ const gearSpeeds=[0,15,24,33,43,54,65,77,87];if(!v.manual){if(v.speed<.4&&v.throttle<.05)v.gear=0;else{v.gear=Math.max(1,v.gear);if(v.gear<8&&v.speed>gearSpeeds[v.gear]*.94)v.gear++;if(v.gear>1&&v.speed<gearSpeeds[v.gear-1]*.84)v.gear--;}}
  const desiredRPM=clamp(12000*v.speed/gearSpeeds[Math.max(1,v.gear)],4500,12500);v.rpm+=(desiredRPM-v.rpm)*(1-Math.exp(-dt*20));return v;
 }
 export class LapTimer{

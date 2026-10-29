@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {wrap,grip,clamp,angle,steeringLimit} from './physics.js?v=224';
+import {wrap,grip,clamp,angle,steeringLimit} from './physics.js?v=229release';
 export function createRacingLine(scene,track){
  const n=1000,spacing=track.length/n,offsets=new Float64Array(n),points=[];
  for(let i=0;i<n;i++){const a=track.at(i*spacing-12).t,b=track.at(i*spacing+12).t,cross=a.z*b.x-a.x*b.z;offsets[i]=-Math.sign(cross)*Math.min(5.4,Math.abs(cross)*13);}

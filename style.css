@@ -163,3 +163,17 @@ body.driving .telemetry #speed-dial{display:block;position:absolute;left:0;top:1
 body.driving .telemetry .instruments{margin-top:-4px;position:relative}
 body.driving .telemetry .instruments .speed{justify-content:center}
 }
+/* preview.28 pit stop: booking chooser and one status line */
+#pit-button.booked{border-color:#d6f58499;color:var(--lime)}
+#pit-panel{position:fixed;right:40px;top:150px;width:300px;padding:12px 14px;background:#0c201ee6;border:1px solid #ffffff22;border-radius:6px;backdrop-filter:blur(14px);z-index:30;font-size:11px}#pit-panel small{color:var(--muted);letter-spacing:.08em}#pit-panel p{margin:8px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
+#pit-panel .pit-compounds,#pit-panel .pit-options{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}#pit-panel button{flex:1 1 auto;min-height:32px;border:1px solid #ffffff25;background:#12251f;color:var(--text);border-radius:4px;padding:6px 8px;font-size:11px}#pit-panel button i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}#pit-panel button.suggested{border-color:#38b46b}
+#pit-status{position:fixed;left:50%;top:52px;transform:translateX(-50%);padding:6px 14px;background:#0c201ed9;border-left:2px solid var(--lime);font-size:11px;color:#dbefdd;z-index:20;pointer-events:none;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-width:650px){#pit-panel{right:12px;left:12px;width:auto;bottom:auto;top:150px}#pit-status{top:44px;font-size:10px}}
+.replay-mode #pit-button,.replay-mode #pit-panel{display:none!important}
+@media(max-height:450px){#pit-panel{top:96px;width:270px;padding:8px 10px}#pit-panel p{display:none}#pit-panel button{min-height:28px;font-size:10px;padding:4px 6px}#pit-status{top:40px}}
+
+/* preview.29: usable pit controls on short and touch screens */
+#pit-panel{max-height:calc(100dvh - 180px);overflow:auto;box-sizing:border-box;box-shadow:0 18px 48px #0007}
+#pit-panel .pit-close{position:absolute;right:6px;top:3px;width:30px;min-height:28px;padding:0;background:transparent;border:0;font-size:21px;color:#d4e0dc}
+@media(pointer:coarse){#pit-panel button{min-height:44px}#pit-panel .pit-close{width:44px;min-width:44px;top:0}#pit-button{min-height:44px}}
+@media(max-height:500px){#pit-panel{top:88px;max-height:calc(100dvh - 104px)}#pit-panel p{display:none}}

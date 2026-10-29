@@ -1,7 +1,7 @@
-import {createTunnelCameraConstraint,boxCameraCollider,capsuleCameraCollider} from './wind-camera.js?v=213';
+import {createTunnelCameraConstraint,boxCameraCollider,capsuleCameraCollider} from './wind-camera.js?v=229release';
 import * as THREE from 'three';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {createWindVolume} from './wind-volume.js?v=213';
+import {createWindVolume} from './wind-volume.js?v=229release';
 export function aerodynamicEstimate(speedKmh,yawDegrees=0,setup={frontWing:28,rearWing:32}){const v=speedKmh/3.6,rho=1.225,scale=.6,area=1.5*scale*scale,q=.5*rho*v*v,yaw=yawDegrees*Math.PI/180,cd=(.68+(setup.frontWing+setup.rearWing)*.0045)*(1+.8*Math.sin(yaw)**2),cl=(1.6+(setup.frontWing+setup.rearWing)*.0266667)*Math.cos(yaw)**2;return {q,drag:q*area*cd,downforce:q*area*cl,side:q*area*.9*Math.sin(yaw),reynolds:rho*v*(5.6*scale)/1.81e-5,cd,cl};}
 // Windshear published envelope and belt dimensions, adapted to a 60% model fixture.
 // Unpublished hardware details and flow are illustrative, not a surveyed facility or CFD.
@@ -33,7 +33,7 @@ export function createWindTunnel(scene){
  for(let row=0;row<8;row++)pipe([-1.5,injectionHeight(row),7.52],[1.5,injectionHeight(row),7.52],.012,steel);
  const nozzleMaterial=steel.clone();nozzleMaterial.side=THREE.DoubleSide;const nozzles=new THREE.InstancedMesh(new THREE.CylinderGeometry(.009,.009,.18,8,1,true),nozzleMaterial,144);nozzles.name='Inlet | smoke injection ports';let port=0;for(let row=0;row<8;row++)for(let column=0;column<18;column++){dummy.position.set((column-8)*.14,injectionHeight(row),7.44);dummy.rotation.set(Math.PI/2,0,0);dummy.updateMatrix();nozzles.setMatrixAt(port++,dummy.matrix);}group.add(nozzles);
  // 3.2 x 9 m single stainless belt, tension rollers and suction perimeter.
- box(3.5,.22,9.4,0,-.08,0,dark);const cv=document.createElement('canvas');cv.width=cv.height=256;const ctx=cv.getContext('2d');ctx.fillStyle='#536268';ctx.fillRect(0,0,256,256);for(let y=0;y<256;y++){ctx.strokeStyle=y%32===0?'#738086':'#57666c';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();}const beltMap=new THREE.CanvasTexture(cv);beltMap.wrapS=beltMap.wrapT=THREE.RepeatWrapping;beltMap.repeat.set(2,5);const belt=new THREE.Mesh(new THREE.PlaneGeometry(3.2,9),new THREE.MeshStandardMaterial({map:beltMap,color:0x36424b,metalness:.35,roughness:.55}));belt.rotation.x=-Math.PI/2;belt.position.y=.015;group.add(belt);
+ box(3.5,.22,9.4,0,-.08,0,dark);const cv=document.createElement('canvas');cv.width=cv.height=256;const ctx=cv.getContext('2d');ctx.fillStyle='#536268';ctx.fillRect(0,0,256,256);for(let y=0;y<256;y++){ctx.strokeStyle=y%32===0?'#738086':'#57666c';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();}const beltMap=new THREE.CanvasTexture(cv);beltMap.colorSpace=THREE.SRGBColorSpace;beltMap.wrapS=beltMap.wrapT=THREE.RepeatWrapping;beltMap.repeat.set(2,5);const belt=new THREE.Mesh(new THREE.PlaneGeometry(3.2,9),new THREE.MeshStandardMaterial({map:beltMap,color:0x36424b,metalness:.35,roughness:.55}));belt.rotation.x=-Math.PI/2;belt.position.y=.015;group.add(belt);
  const rollers=[];for(const z of [-4.5,4.5]){const roll=pipe([-1.85,-.17,z],[1.85,-.17,z],.17);rollers.push(roll);for(const x of [-1.86,1.86]){box(.23,.28,.46,x,-.08,z,dark);pipe([x-.12,-.12,z],[x+.12,-.12,z],.09);}}
  for(const x of [-1.71,1.71]){box(.14,.035,9.5,x,.035,0,steel);box(.018,.018,9,x,.057,0,rubber);for(let z=-4.4;z<4.5;z+=.14)box(.05,.01,.036,x,.058,z,dark);pipe([x,-.28,-4.5],[x,-.28,4.5],.08);}
  // Bolts, suction hoses, load-cell restraints, service platforms and racks.

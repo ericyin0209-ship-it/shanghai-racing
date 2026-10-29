@@ -6,9 +6,12 @@ export function createKerbSurfaces(scene,track){
  material.onBeforeCompile=shader=>{shader.vertexShader='varying vec2 kerbUV;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nkerbUV=uv;');shader.fragmentShader='varying vec2 kerbUV;\n'+shader.fragmentShader;shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
  vec2 q=kerbUV;float aa=max(length(fwidth(q)),.001);float fleck=fract(sin(dot(floor(q*120.),vec2(127.1,311.7)))*43758.5453);float grain=1.-smoothstep(.006,.04,aa);float edgeDirt=pow(abs(q.x-.5)*2.,3.);diffuseColor.rgb*=.96-edgeDirt*.12+(fleck-.5)*.10*grain;
  `);};material.customProgramCacheKey=()=> 'kerb-metric-paint-218';
- const n=Math.round(track.length),width=8,root=new THREE.Group();root.name='Metric Shanghai kerb profiles / 218';scene.add(root);const palette=[new THREE.Color('#d8d6c8'),new THREE.Color('#b92230')];
+ const n=Math.round(track.length),width=8,root=new THREE.Group();root.name='Metric Shanghai kerb profiles / 218';scene.add(root);const palette=[new THREE.Color('#d8d6c8'),new THREE.Color('#b92230')],shoulder=new THREE.Color('#5d6263');
+ // Photos 07/09/10: red/white kerbs only through corners; the straights have a plain grey shoulder outside the white line.
+ // preview.27: the corner mask now comes from track-surfaces.js, the same data that shapes the physics kerb crown.
+ const corner=track.surfaces.kerbModules;
  for(const side of [-1,1]){const positions=[],colors=[],uv=[],index=[];
-  for(let i=0;i<n;i++){const col=palette[i%2];for(let end=0;end<2;end++){const s=(i+end)*track.length/n;for(let j=0;j<=width;j++){const u=j/width,off=side*(7.2+u*1.15),f=track.at(s,off);positions.push(f.p.x,f.p.y+.0007,f.p.z);colors.push(col.r,col.g,col.b);uv.push(u,s);}}
+  for(let i=0;i<n;i++){const col=track.surfaces.kerbAt(i+.5,side)?palette[i%2]:shoulder;for(let end=0;end<2;end++){const s=(i+end)*track.length/n;for(let j=0;j<=width;j++){const u=j/width,off=side*(7.2+u*1.15),f=track.at(s,off);positions.push(f.p.x,f.p.y+.0007,f.p.z);colors.push(col.r,col.g,col.b);uv.push(u,s);}}
    const base=i*(width+1)*2;for(let j=0;j<width;j++){const a=base+j,b=a+width+1;if(side>0)index.push(a,b,a+1,a+1,b,b+1);else index.push(a,a+1,b,a+1,b+1,b);}
   }
   // At an extremely tight sampled apex the inside offset can momentarily reverse.

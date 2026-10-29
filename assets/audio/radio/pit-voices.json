@@ -1,0 +1,326 @@
+{
+  "version": "preview.29",
+  "clips": {
+    "en-pit-booked": {
+      "text": "Box this lap, box this lap. Tyres are ready.",
+      "seconds": 3.068,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 3.029,
+      "synthetic": true
+    },
+    "en-pit-booked-2": {
+      "text": "Okay, we're ready for you. Box, box.",
+      "seconds": 2.652625,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 2.603,
+      "synthetic": true
+    },
+    "en-pit-limiter": {
+      "text": "Pit limiter, pit limiter.",
+      "seconds": 1.8532916666666666,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 1.835,
+      "synthetic": true
+    },
+    "en-pit-box": {
+      "text": "Box is on the right. Watch your marks.",
+      "seconds": 2.513333333333333,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 2.475,
+      "synthetic": true
+    },
+    "en-pit-release": {
+      "text": "Good stop. Limiter until the line.",
+      "seconds": 2.618625,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 2.56,
+      "synthetic": true
+    },
+    "en-pit-release-2": {
+      "text": "Clean stop. Go, go. Watch the exit line.",
+      "seconds": 3.100625,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 3.072,
+      "synthetic": true
+    },
+    "en-pit-overshoot": {
+      "text": "Overshot the mark. Brakes off, we'll push you back.",
+      "seconds": 3.066625,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 3.029,
+      "synthetic": true
+    },
+    "en-pit-missed": {
+      "text": "We missed the box. Stay on the limiter, box next lap.",
+      "seconds": 3.4006666666666665,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 3.371,
+      "synthetic": true
+    },
+    "en-pit-cancel": {
+      "text": "Copy, stay out, stay out.",
+      "seconds": 1.9899583333333333,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 1.963,
+      "synthetic": true
+    },
+    "en-pit-speeding": {
+      "text": "Watch the speed in the pit lane.",
+      "seconds": 2.194625,
+      "engine": "Kokoro",
+      "speaker": "bm_george",
+      "processedSeconds": 2.176,
+      "synthetic": true
+    },
+    "fr-pit-booked": {
+      "text": "Rentre ce tour-ci. Les pneus sont prêts.",
+      "seconds": 3.6,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.603,
+      "synthetic": true
+    },
+    "fr-pit-booked-2": {
+      "text": "On est prêts pour toi. Box, box.",
+      "seconds": 3.28,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.304,
+      "synthetic": true
+    },
+    "fr-pit-limiter": {
+      "text": "Limiteur, limiteur.",
+      "seconds": 2.88,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 1.92,
+      "synthetic": true
+    },
+    "fr-pit-box": {
+      "text": "Le box est à droite. Vise les repères.",
+      "seconds": 3.04,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.133,
+      "synthetic": true
+    },
+    "fr-pit-release": {
+      "text": "Bon arrêt. Limiteur jusqu'à la ligne.",
+      "seconds": 4.96,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.755,
+      "synthetic": true
+    },
+    "fr-pit-release-2": {
+      "text": "Arrêt propre. Vas-y. Attention à la ligne de sortie.",
+      "seconds": 4.4,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.328,
+      "synthetic": true
+    },
+    "fr-pit-overshoot": {
+      "text": "Trop long. Relâche les freins, on te recule.",
+      "seconds": 4.0,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.944,
+      "synthetic": true
+    },
+    "fr-pit-missed": {
+      "text": "On a raté le box. Garde le limiteur, rentre au prochain tour.",
+      "seconds": 4.64,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.541,
+      "synthetic": true
+    },
+    "fr-pit-cancel": {
+      "text": "Bien reçu, reste en piste.",
+      "seconds": 2.8,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 1.877,
+      "synthetic": true
+    },
+    "fr-pit-speeding": {
+      "text": "Attention à la vitesse dans la voie des stands.",
+      "seconds": 3.2,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.176,
+      "synthetic": true
+    },
+    "ja-pit-booked": {
+      "text": "今周ピットイン。タイヤは準備できています。",
+      "seconds": 4.08,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.072,
+      "synthetic": true
+    },
+    "ja-pit-booked-2": {
+      "text": "準備完了です。ボックス、ボックス。",
+      "seconds": 5.28,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 4.224,
+      "synthetic": true
+    },
+    "ja-pit-limiter": {
+      "text": "ピットリミッター、オンにして。",
+      "seconds": 4.48,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.285,
+      "synthetic": true
+    },
+    "ja-pit-box": {
+      "text": "ピットは右側。停止位置に合わせて。",
+      "seconds": 3.92,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.816,
+      "synthetic": true
+    },
+    "ja-pit-release": {
+      "text": "いいストップ。ラインまでリミッター。",
+      "seconds": 3.12,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.133,
+      "synthetic": true
+    },
+    "ja-pit-release-2": {
+      "text": "クリーンなストップ。行って。出口のラインに注意。",
+      "seconds": 8.08,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 7.168,
+      "synthetic": true
+    },
+    "ja-pit-overshoot": {
+      "text": "行き過ぎ。ブレーキを離して、押し戻します。",
+      "seconds": 4.48,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.797,
+      "synthetic": true
+    },
+    "ja-pit-missed": {
+      "text": "ピットを通り過ぎました。リミッターのまま、次の周に入って。",
+      "seconds": 7.76,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 6.272,
+      "synthetic": true
+    },
+    "ja-pit-cancel": {
+      "text": "了解、ステイアウト。",
+      "seconds": 5.12,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.072,
+      "synthetic": true
+    },
+    "ja-pit-speeding": {
+      "text": "ピットレーンの速度に注意。",
+      "seconds": 3.12,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 1.621,
+      "synthetic": true
+    },
+    "ko-pit-booked": {
+      "text": "이번 랩에 피트인. 타이어 준비됐습니다.",
+      "seconds": 5.68,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.901,
+      "synthetic": true
+    },
+    "ko-pit-booked-2": {
+      "text": "준비됐습니다. 박스, 박스.",
+      "seconds": 4.56,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.456,
+      "synthetic": true
+    },
+    "ko-pit-limiter": {
+      "text": "피트 리미터 켜세요.",
+      "seconds": 4.4,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.987,
+      "synthetic": true
+    },
+    "ko-pit-box": {
+      "text": "박스는 오른쪽입니다. 정지선 맞추세요.",
+      "seconds": 4.48,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.328,
+      "synthetic": true
+    },
+    "ko-pit-release": {
+      "text": "좋은 스톱. 라인까지 리미터 유지.",
+      "seconds": 5.2,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.2,
+      "synthetic": true
+    },
+    "ko-pit-release-2": {
+      "text": "깔끔한 스톱. 출발. 출구 라인 주의.",
+      "seconds": 3.92,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.816,
+      "synthetic": true
+    },
+    "ko-pit-overshoot": {
+      "text": "정지선을 지났어요. 브레이크 풀어요, 밀어드릴게요.",
+      "seconds": 6.88,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 5.845,
+      "synthetic": true
+    },
+    "ko-pit-missed": {
+      "text": "박스를 지나쳤습니다. 리미터 유지, 다음 랩에 들어오세요.",
+      "seconds": 5.36,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 3.925,
+      "synthetic": true
+    },
+    "ko-pit-cancel": {
+      "text": "알겠습니다, 스테이 아웃.",
+      "seconds": 3.6,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 2.517,
+      "synthetic": true
+    },
+    "ko-pit-speeding": {
+      "text": "피트 레인 속도 주의하세요.",
+      "seconds": 6.0,
+      "engine": "Qwen3-TTS",
+      "speaker": "Ryan",
+      "processedSeconds": 4.693,
+      "synthetic": true
+    }
+  },
+  "notes": "Local synthetic male speech; no real engineer identity or recordings. Chinese uses English. Speech-activity caption timings, not phoneme alignment."
+}

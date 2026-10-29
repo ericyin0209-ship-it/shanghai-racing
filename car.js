@@ -1,17 +1,17 @@
-import {suspensionWeight,suspensionAccessory} from './suspension-tags.js';
-import {createRigidSuspension} from './rigid-suspension.js';
-import {brakeGlow} from './brake-thermal.js';
-import {createTyreCompounds} from './tyre-compounds.js';
-import {createVehicleSurface} from './vehicle-surface.js';
-import {skinSuspension} from './suspension-skin.js';
-import {createRearMirrors} from './rear-mirrors.js?v=222';
-import {createTyreDust} from './tyre-dust.js';
-import {createAMRSteering} from './steering-wheel.js';
+import {suspensionWeight,suspensionAccessory} from './suspension-tags.js?v=229release';
+import {createRigidSuspension} from './rigid-suspension.js?v=229release';
+import {brakeGlow} from './brake-thermal.js?v=229release';
+import {createTyreCompounds} from './tyre-compounds.js?v=229release';
+import {createVehicleSurface} from './vehicle-surface.js?v=229release';
+import {skinSuspension} from './suspension-skin.js?v=229release';
+import {createRearMirrors} from './rear-mirrors.js?v=229release';
+import {createTyreDust} from './tyre-dust.js?v=229release';
+import {createAMRSteering} from './steering-wheel.js?v=229release';
 import * as THREE from 'three';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
-import {lightState} from './light-state.js';
-import {clusteredLOD} from './model-lod.js';
+import {lightState} from './light-state.js?v=229release';
+import {clusteredLOD} from './model-lod.js?v=229release';
 export const liveries=[{id:'green',name:'Aston Martin AMR23',tag:'FORMULA / AMR23',color:'#006954',accent:'#c8ff38',number:'14'}];
 let templates=[],aeroBoxes=[],carbon,paint,bounds;const rigidDefinitions=new Map();const mirrorCentres=[],spareWingParts=[];const steeringCenter=new THREE.Vector3(0,.572,.49);
 export function makeCarbon(){return carbon;}
@@ -42,7 +42,7 @@ export async function preloadCars(renderer,{modelLoader=()=>new GLTFLoader().loa
  if(o.userData.rigid_chassis_mount&&o.userData.rigid_upright_mount){const convert=a=>new THREE.Vector3(-a[1],a[2],-a[0]),inner=convert(o.userData.rigid_chassis_mount),outer=convert(o.userData.rigid_upright_mount),centre=inner.clone().add(outer).multiplyScalar(.5),q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),outer.clone().sub(inner).normalize()),undo=new THREE.Matrix4().compose(centre,q,new THREE.Vector3(1,1,1)).invert();g.applyMatrix4(undo);g.deleteAttribute('suspensionWeight');part='rigid:'+name;rigidDefinitions.set(part,{name,inner,outer,length:inner.distanceTo(outer),axle:/^Front/.test(name)?'front':'rear',side:inner.x>0?'left':'right'});}
  else if(/^Front suspension.*rigid ball/i.test(name)){part=Math.abs(c.x)>.5?`front-${c.x>0?'left':'right'}-upright`:'body';g.deleteAttribute('suspensionWeight');}
  if(name.includes('LCD panel'))part='screen';
- if(!g.attributes.uv)g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(g.attributes.position.count*2),2));g.deleteAttribute('tangent');const mat=o.material;if(/textured slick rubber/.test(mat.name)){mat.color.set('#ffffff');mat.roughness=.90;}if(/emerald/.test(mat.name))mat.roughness=.23;if(/^Carbon R3/.test(mat.name)){mat.color.setScalar(.58);mat.envMapIntensity=.65;}if(!carbon&&/^Carbon R3.*woven/.test(mat.name))carbon=mat;
+ if(!g.attributes.uv)g.setAttribute('uv',new THREE.BufferAttribute(new Float32Array(g.attributes.position.count*2),2));g.deleteAttribute('tangent');const mat=o.material;if(/textured slick rubber/.test(mat.name)){mat.color.set('#ffffff');mat.roughness=.90;}if(/emerald/.test(mat.name)){mat.roughness=.23;mat.metalness=.55;mat.clearcoat=1;mat.clearcoatRoughness=.06;}if(/fitted atlas/i.test(mat.name)){mat.clearcoat=.75;mat.clearcoatRoughness=.08;}/* preview.27: metallic base under one clearcoat, printed livery shares it */if(/^Carbon R3/.test(mat.name)){mat.color.setScalar(.58);mat.envMapIntensity=.65;}if(!carbon&&/^Carbon R3.*woven/.test(mat.name))carbon=mat;
  for(const k of ['map','normalMap','bumpMap','roughnessMap','metalnessMap','emissiveMap'])if(mat[k]){mat[k].anisotropy=renderer.capabilities.getMaxAnisotropy();mat[k].userData.shared=true;}
  if(/^(Front|Rear) tyre.*rounded slick shoulder/i.test(name))part=`${/^Front/i.test(name)?'front':'rear'}-${c.x>0?'left':'right'}-tread`;
  if(!paint&&/emerald/.test(mat.name))paint=mat;
@@ -66,12 +66,21 @@ export function createCar(livery=liveries[0],{detail=true}={}){
  const lamp=detail?new THREE.PointLight('#ff1526',0,2.5):null;if(lamp){lamp.position.set(0,.26,-2.47);chassis.add(lamp);}
  const safetyMaterial=new THREE.MeshStandardMaterial({color:'#442600',emissive:'#ffad16',emissiveIntensity:0,toneMapped:false}),safetyLights=[];for(const s of [-1,1]){const m=new THREE.Mesh(new THREE.BoxGeometry(.025,.013,.008),safetyMaterial);m.position.set(s*.30,.75,.01);chassis.add(m);safetyLights.push(m);}
  function updateLights(state={}){const r=lightState(state);rainMaterial.emissiveIntensity=r.on?14:0;rainMaterial.color.set(r.on?'#ff1526':'#600813');if(lamp)lamp.intensity=r.on?10:0;safetyMaterial.emissiveIntensity=r.amberOn?6:0;return r;}
+ // preview.28: per corner, tyre + rim + wheel cover + nut form one removable assembly (for pit stops); the brake disc
+ // stays on the spinning hub, and a machined hub stub (hidden inside the rim while a wheel is fitted) is added.
+ const hubMat=new THREE.MeshStandardMaterial({color:'#8b9093',metalness:.85,roughness:.32}),pegMat=new THREE.MeshStandardMaterial({color:'#2a2d2f',metalness:.6,roughness:.4});
+ for(const spin of wheels){const assembly=new THREE.Group();assembly.name='wheel assembly';for(const m of [...spin.children])if(!/brake/i.test(m.material?.name||''))assembly.add(m);spin.add(assembly);spin.userData.assembly=assembly;
+  const out=Math.sign(spin.parent.position.x)||1,hub=new THREE.Group();hub.name='hub stub';spin.add(hub);
+  const stub=new THREE.Mesh(new THREE.CylinderGeometry(.034,.042,.15,24),hubMat);stub.rotation.z=Math.PI/2;stub.position.x=out*.075;hub.add(stub);
+  const flange=new THREE.Mesh(new THREE.CylinderGeometry(.098,.098,.016,32),hubMat);flange.rotation.z=Math.PI/2;flange.position.x=out*.02;hub.add(flange);
+  for(let k=0;k<6;k++){const a=k*Math.PI/3,peg=new THREE.Mesh(new THREE.CylinderGeometry(.008,.008,.03,10),pegMat);peg.rotation.z=Math.PI/2;peg.position.set(out*.035,Math.cos(a)*.074,Math.sin(a)*.074);hub.add(peg);}
+  const thread=new THREE.Mesh(new THREE.CylinderGeometry(.028,.028,.05,20),pegMat);thread.rotation.z=Math.PI/2;thread.position.x=out*.165;hub.add(thread);}
  const compounds=createTyreCompounds(wheels,[...materials.values()].filter(m=>/flat yellow sidewall ink/.test(m.name)));
  let last=-1;function updateTelemetry(v,timer,wetness,time){compounds.update(v.setup?.compound);for(let i=0;i<4;i++)for(const material of brakeMaterials[i])material.emissiveIntensity=brakeGlow(v.wheels?.[i]?.brakeTemperature??20);if(detailedWheel){detailedWheel.update(v,timer,wetness,time);return;}if(time-last<.1)return;last=time;const c=cv.getContext('2d');c.fillStyle='#050a0d';c.fillRect(0,0,1024,512);c.textAlign='center';c.fillStyle='#bdf05a';c.font='bold 32px monospace';c.fillText('AMR23',512,45);c.fillStyle='#fff';c.font='bold 220px monospace';c.fillText(v.gear||'N',512,275);c.font='bold 62px monospace';c.fillText(Math.round(v.speed*3.6),855,170);c.fillText(Math.round(4500+(v.speed%12)*580),172,170);c.font='24px monospace';c.fillStyle='#9bb2ba';c.fillText('RPM',172,211);c.fillText('KM/H',855,211);c.fillStyle='#b4d7c6';c.fillText('LAP '+(timer?.lap||1),180,330);c.fillText('TYRE '+Math.round(v.temperature)+' C',512,330);c.fillText('WET '+Math.round(wetness*100)+'%',842,330);c.fillStyle='#4acb91';c.fillRect(45,392,934*(v.throttle||0),28);c.fillStyle='#f24b4b';c.fillRect(45,434,934*(v.brake||0),20);screenTexture.needsUpdate=true;}
  const rigidSuspension=createRigidSuspension(root,chassis,parts,rigidMeshes);const tyreDust=createTyreDust(wheels);const mirrors=detail?createRearMirrors(chassis,mirrorCentres):[];const updateSuspension=()=>{rigidSuspension.update();suspensionUpdates.forEach(update=>update());};updateSuspension();
  root.userData={rigidSuspension,mirrors,updateSuspension,updateTyreDust:tyreDust.update,resetTyreDust:tyreDust.reset,brand:livery.name,units:'metres',surveyed:false,aeroBoxes,chassis,wheels,frontWheels,steering,helmet,visor,rearLights,rearLight:rearLights[0],safetyLights,updateLights,updateTelemetry,wheelbase:3.6,trackWidth:1.665,wheelRadius:.36,eye:new THREE.Vector3(0,.785,-.31),dimensions:{length:bounds.max.z-bounds.min.z,width:bounds.max.x-bounds.min.x,height:bounds.max.y-bounds.min.y},source:'AMR23_R3.blend offline rebuild'};const wetSurface=createVehicleSurface(root);root.userData.updateSurface=wetSurface.update;updateLights();updateTelemetry({speed:0,gear:0,temperature:28,wear:0},null,0,0);return root;
 }
 
-export function createSpareWheel(axle='front'){const root=new THREE.Group();root.name='AMR23 full-detail spare '+axle+' wheel';const x=axle==='front'?.8325:.7855,z=axle==='front'?1.67:-1.93;for(const t of templates.filter(t=>t.part===axle+'-left-spin'||t.part===axle+'-left-tread')){const g=t.geometry.clone().translate(-x,-.36,-z);const mesh=new THREE.Mesh(g,t.material.clone());mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}return root;}
+export function createSpareWheel(axle='front',side='left'){const root=new THREE.Group();root.name='AMR23 full-detail spare '+axle+' '+side+' wheel';const x=(side==='left'?1:-1)*(axle==='front'?.8325:.7855),z=axle==='front'?1.67:-1.93;for(const t of templates.filter(t=>(t.part===axle+'-'+side+'-spin'&&!/brake/i.test(t.material.name))||t.part===axle+'-'+side+'-tread')){const g=t.geometry.clone().translate(-x,-.36,-z);const mesh=new THREE.Mesh(g,t.material.clone());mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}return root;}
 
 export function createSpareWing(){const root=new THREE.Group();root.name='AMR23 R3 multi-element front wing';const bounds=new THREE.Box3();for(const t of spareWingParts){t.geometry.computeBoundingBox();bounds.union(t.geometry.boundingBox);}const centre=bounds.getCenter(new THREE.Vector3());for(const t of spareWingParts){const g=t.geometry.clone().translate(-centre.x,-bounds.min.y,-centre.z);const mesh=new THREE.Mesh(g,t.material.clone());mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);}return root;}

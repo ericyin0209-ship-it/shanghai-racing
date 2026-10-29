@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0-preview.25",
+  "version": "2.0.0-preview.34",
   "cars": [
     {
       "id": "green",
@@ -280,5 +280,190 @@
     "post": "half-resolution edge-aware ambient occlusion and separable HDR bloom, height-integrated aerial haze",
     "preserved": "car asset, map geometry, physics, archive keys and direct entry",
     "measuredPowerWatts": false
+  },
+  "siteUpgrade226": {
+    "mainStraight": "pit building, grandstand and both bridges sized from OSM footprints (main-straight.js); bridge planform 145x32 m, lens elevation from photo 07; T16-end bridge moved to OSM position; glass towers ~28x22 m from photos 02/06/07; roof 35.5 m (photo 02, OSM 35 m); estimates",
+    "stands": "B1/B2/B3 and eleven T11-T13 OSM grandstand outlines as open steel bleachers (photos 07, 01); H/K canopy height alternation and rear frame per photo 08",
+    "paddock": "team pavilions ~7 m two-storey glazed with deep hipped roofs (photos 02/03), height estimated",
+    "trackside": "kerbs painted only at corners, ~4 m catch fence with cranked top, asphalt corner run-off, landscape distance boards; visual only",
+    "mapBounds": "linear OSM features clipped at the 121.198-121.258 E / 31.322-31.362 N download box (map-bounds.js); ground limited to the box, plain fogged apron outside",
+    "preserved": "car asset, track collision, barrier positions, physics surface, timing line, start position, archive keys",
+    "survey": false
+  },
+  "fullUpgrade227": {
+    "bridges": "lens shell regenerated with consistent outward winding and no degenerate tips; window band and eye slots are real openings with inset glazing, lining, slabs and trusses; no global double-siding or depth tricks",
+    "surfaces": "track-surfaces.js shared by drawing and physics (asphalt, kerb, shoulder, run-off, paint, gravel, grass); kerb crown only at painted kerbs; ribbon winding fixed for left-side strips; ray sweep 98.2% visual/physics agreement; lap records under a new map id, older records kept",
+    "water": "standing water follows the road crown to the edges and is reduced under the two bridges; same expression in physics and both road shaders",
+    "mainStand": "two-tier section from photo 05 (upper tier lifted over a glazed hospitality band, rear block 29.25 m); estimates",
+    "pit": "shaded bay interiors and white fascia with dark bay numbers (photo 04)",
+    "car": "emerald base metalness 0.55 under clearcoat 1.0; printed livery shares clearcoat 0.75; geometry unchanged (no editable source)",
+    "driving": "lateral slide bound 45 deg (was 26.6); power follows rpm, 8th gear 87 m/s; barrier contact yaw impulse; progressive keyboard input; pad dead-zone rescale and curve; input cleared on blur/background",
+    "performance": "garage area lights merged to 3 on balanced/adaptive (11 on high/ultra); lotus membrane and seam LOD",
+    "launcher": "first free port 8000-8019, opens after the server answers; Windows launcher added (untested)",
+    "carModelFiles": "unchanged"
+  },
+  "pitStop228": {
+    "pitLane": {
+      "source": "FIA 2024 中国大奖赛赛道图与维修区图纸（主），FIA 2019 赛事说明交叉核对；evidence/维修区参考/",
+      "route": "T16 外侧入口 → 限速区 → 快车道/作业道 → 阿斯顿·马丁车库（单元 14–16，维修位按单元 15 中线）→ T1 内侧出口",
+      "garageUnits": 36,
+      "limitKmh": 80,
+      "collision": "维修区墙、墙轨道侧、外侧护栏为胶囊-折线碰撞；赛道护栏在维修区入口/出口一侧打开（barrierOpen 与可见护栏一致）",
+      "surveyed": false,
+      "note": "长度、宽度、单元宽度按图纸比例与现有赛道样条估计，未实地测量；起跑线与赛道起伏未改。"
+    },
+    "crew": {
+      "asset": "assets/models/pit-crew.glb",
+      "bytes": 656652,
+      "sha256": "217f3900ea1855c520e1063a8b1a11a017bc393e1b46f64c0381a37376c4f094",
+      "source": "assets-src/crew/build_crew.py + pit-crew.blend（Blender 4.5 本机自建，原创）",
+      "triangles": {
+        "lod0": 13812,
+        "lod1": 4142
+      },
+      "bones": 26,
+      "people": 17,
+      "runtime": "每个 LOD 合并为 1 个蒙皮网格（哑光/光泽两组材质，顶点色）；近处由 LOD1 作不可见阴影代理"
+    },
+    "audio": {
+      "source": "WebAudio 运行时合成（pit-audio.js），无录音或第三方音频素材",
+      "spatial": "HRTF PannerNode，位置取实际轮毂、千斤顶与脚步落点，听者跟随渲染相机"
+    },
+    "radio": {
+      "mode": "仅字幕（附无线电噪声）；新增进站语句未生成语音文件"
+    },
+    "carModelFiles": "unchanged (amr23-r3.gltf / .bin 与 preview.27 逐字节一致)",
+    "randomFailures": false
+  },
+  "pitStop229": {
+    "crew": {
+      "asset": "assets/models/pit-crew-r29.glb",
+      "bytes": 740380,
+      "sha256": "952806b85583c6d1841eaefe4e32107e4b04d80774fcb69580bc8a7e013bf601",
+      "triangles": {
+        "lod0": 13972,
+        "lod1": 4302
+      },
+      "source": "assets-src/crew/base-preview28.glb + upgrade_crew_mesh.py; final GLB, no new final .blend",
+      "markings": "assets/models/crew-markings.png",
+      "limitations": "procedural rig and poses, no scan or mocap"
+    },
+    "radio": {
+      "voices": "40 offline male synthetic clips; en/fr/ja/ko, zh uses en",
+      "metadata": "assets/audio/radio/pit-voices.json",
+      "effects": "existing radio filter, compression and pre-transmission noise"
+    },
+    "equipment": "reused hose buffers and merged rigid meshes; ground-level jacks and state-driven wheel handoff",
+    "rendering": "seat bevel LOD and 24m seat chunks; shadow-only crew proxies skip colour pass",
+    "physics": "fixed 120Hz preserved; service sequence and pushback recovery updated",
+    "carModelFiles": "unchanged from preview.28",
+    "powerMeasured": false
+  },
+  "pitStop230": {
+    "crew": {
+      "asset": "assets/models/pit-crew-v30.glb",
+      "bytes": 1185268,
+      "sha256": "e17a627b51879ab41c0b66a81469ea75015ec024587386fe4cd0d6ab3b96d180",
+      "source": "assets-src/crew/build_crew_v30.py + pit-crew-v30.blend（Blender 4.5 本机脚本建模，原创；背部标记沿用 assets/models/crew-markings.png）",
+      "triangles": {
+        "lod0": 11716,
+        "lod1": 3748
+      },
+      "bones": 42,
+      "people": 17,
+      "runtime": "每个 LOD 合并为 1 个蒙皮网格，5 类材质（布料/皮革手套鞋/头盔清漆/面罩/标记）；近处 LOD1 作阴影代理",
+      "limitations": "程序化动作与 IK，无动作捕捉或扫描；比例与服装按参考视频目测，未测量",
+      "unusedKept": "assets/models/pit-crew.glb 与 pit-crew-r29.glb 已不加载，按项目规则保留"
+    },
+    "pitLane": {
+      "source": "OSM way 107371147 / 107371138（ODbL，2026-10-07 下载范围内），与游戏赛道对齐 x +3.2 m；FIA 2024 中国大奖赛维修区图纸核对入口/出口与车库单元",
+      "offsetsFromTrackCentre": {
+        "wallTrack": -9.7,
+        "wallPit": -11.4,
+        "fastLane": -14.5,
+        "divider": -17.6,
+        "box": -22.7,
+        "garageLine": -27.5
+      },
+      "surveyed": false,
+      "note": "OSM 线位精度约 ±2–3 m；宽度、车库门线为估计；起跑线与赛道起伏未改；道路/碰撞/辅助路线/停车点共用 pit-lane.js 一套数据"
+    },
+    "release": "落车 + 千斤顶撤出 + 人员/轮胎/工具离开实测出站扫掠区（pit-box-scene.js CHANNEL）后才亮绿灯；同一状态驱动画面、声音与回放",
+    "carModelFiles": "unchanged from preview.29"
+  },
+  "pitStop231": {
+    "crew": {
+      "asset": "assets/models/pit-crew-v31.glb",
+      "bytes": 4546844,
+      "sha256": "e7a4798a9a3a5e4438fedb48ea60deae93ea6edd074b476f730fe531a352a70a",
+      "clips": {
+        "asset": "assets/models/pit-crew-v31-clips.json",
+        "bytes": 3551,
+        "sha256": "a708dbd41d58ef138af38742f71301177c07c27376af31f5c2c22eaf89bc4522",
+        "count": 63
+      },
+      "base": "Blender Studio Human Base Meshes v1.4.1, GEO-body_male_realistic, CC0 1.0 (https://www.blender.org/download/demo-files/#assets)；下载包 sha256 811f43accbb31a88266d932f8f5563b2d13586fca0ba2693aad1f5fe582b3515，存放于游戏目录外，不分发",
+      "source": "assets-src/crew/build_crew_v31.py + pit-crew-v31.blend（模型）；animate_crew_v31.py + pit-crew-v31-animated.blend（手工关键帧动作）",
+      "triangles": {
+        "lod0": "约 16200",
+        "lod1": "约 3900"
+      },
+      "bones": 52,
+      "people": 17,
+      "runtime": "每人 3 次绘制（布料、头盔、面罩）；共享几何与材质的蒙皮克隆；近处 LOD1 作阴影代理",
+      "limitations": "手工关键帧动作，未使用动作捕捉；比例与动作按用户提供的视频目测；推车回位为站姿加手部 IK 近似"
+    },
+    "equipment": "前千斤顶黄色（V1）；吊臂侧面白字 ASTON MARTIN / aramco / cognizant（V2/V3，间距估计）；车库前 DHL 黄色横幅与车手名牌（V3，尺寸与左右位置为估计）",
+    "pitStopLogic": "推车回位后服务延后 3.8 s（pit-stop.js PUSH_RESET），让推车的前卸胎员绕回车轮；未改动物理、碰撞或路面",
+    "unusedKept": "pit-crew.glb、pit-crew-r29.glb、pit-crew-v30.glb 不再加载，按项目规则保留"
+  },
+  "pitStop232": {
+    "crew": {
+      "asset": "assets/models/pit-crew-v32.glb",
+      "sha256": "cf40096450f0c68566c976723e96d7e8d682ac7b6ab223e587e70b291f20ab16",
+      "bytes": 6439828,
+      "textures": {
+        "albedo": 2048,
+        "normal": 1024,
+        "orm": 1024
+      },
+      "animations": "63 authored clips retained from preview.31",
+      "source": "assets-src/crew/upgrade_crew_v32.py; input preview.31 editable GLB",
+      "newFinalBlend": false,
+      "morphTargets": 2
+    },
+    "suspension": "pit-dynamics.js analytic damped landing; visual response, not measured AMR23 damper data",
+    "road": "same shared pit data; entry curvature and approach width corrected; barriers and surface changed; main timing line / track elevation unchanged",
+    "surveyed": false
+  },
+  "pitStop233": {
+    "crew": {
+      "asset": "assets/models/pit-crew-v33.glb",
+      "sha256": "c44f15f31a20bc1f044d64cf8a67769cd50ba64eb384b01fe6d7abf1fbc7d308",
+      "bytes": 6760992,
+      "clips": {
+        "asset": "assets/models/pit-crew-v33-clips.json",
+        "sha256": "00f4050ca0e1ff458731fda1c232f558120685d07c4967e9d0499c8f24052ec7",
+        "bytes": 16442
+      },
+      "roles": "all 17 crew",
+      "otherRoles": "pit-crew-v32.glb kept on disk, no longer loaded",
+      "animations": "77 clips: the 63 preview.31 clips re-baked on the new model, p33_gun/off/on_FL/FR/RL/RR (FR and RR mirrored, rear corners moved out by the nut difference) and p33_fjack / p33_rjack, each with phase markers and baked foot-contact windows",
+      "source": "assets-src/crew/build_crew_v33.py + pit-crew-v33.blend (model, base body Blender Studio Human Base Meshes v1.4.1, CC0, not shipped); animate_crew_v33.py + pit-crew-v33-animated.blend (hand-keyed, no motion capture)"
+    },
+    "audio": "pit-audio.js: drop thud on the frame the tyres reach the floor (lift 0) instead of 17 ms before",
+    "road": "unchanged; no physics, collision, start line or elevation change",
+    "surveyed": false
+  },
+  "pitStop234": {
+    "crew": {
+      "asset": "assets/models/pit-crew-v34.glb",
+      "sha256": "367889128f1b4f0890186f9a1c5372e820934ffc8b0dfa001e11a5ba77baaacc",
+      "bytes": 10990772,
+      "clips": 77,
+      "source": "Packed editable Blender input + refine-jack-clips-v34.mjs + compact-crew-glb-v34.mjs; final rig, walk and fitter-footwork authored from bind-pose anatomy."
+    },
+    "map": "FIA 2024 Doc 4 + event notes 10.4; no survey scale; bollard moved from wall nose to entry apex",
+    "simulation": "77 clips; anatomical correction of 150 hand tracks (148 corrected in place plus 2 rebaked in walk); reauthored front/rear jack and walk; contact IK; authored prop trajectory and staged arrival/cleanup. Not mocap or scanned clothing."
   }
 }

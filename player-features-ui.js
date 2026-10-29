@@ -1,4 +1,4 @@
-import {createLocalEnvironment} from './local-environment.js';
+import {createLocalEnvironment} from './local-environment.js?v=229release';
 export function installPlayerFeatures({profile,applyEnvironment,canApply,onCalendar}){
  const $=id=>document.getElementById(id),el=(tag,text,parent)=>{const n=document.createElement(tag);if(text)n.textContent=text;parent?.append(n);return n;};
  const dialog=el('dialog');dialog.id='driver-profile';dialog.className='driver-profile';document.body.append(dialog);

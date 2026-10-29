@@ -1,4 +1,4 @@
-import {makeCarbon,createSpareWing,createSpareWheel} from './car.js';
+import {makeCarbon,createSpareWing,createSpareWheel} from './car.js?v=229release';
 import * as THREE from 'three';
 
 // Trackside service equipment. Dimensions are metres; the central car bay stays clear.

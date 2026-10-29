@@ -5,7 +5,7 @@ const cache=new WeakMap();
 function variants(g){
  if(cache.has(g))return cache.get(g);let mid=null,far=null;const p=g.parameters;
  if(g.userData.environmentLOD){[mid,far]=g.userData.environmentLOD;}else if(g.userData.seatShell&&p?.shapes){
-  mid=new THREE.ExtrudeGeometry(p.shapes,{depth:.46,bevelEnabled:false,steps:1,curveSegments:3});mid.translate(0,0,-.23);mid.rotateY(Math.PI/2);
+  mid=new THREE.ExtrudeGeometry(p.shapes,{depth:.46,bevelEnabled:false,steps:1,curveSegments:g.userData.mainSeat?6:3});mid.translate(0,0,-.23);mid.rotateY(Math.PI/2);
   const seat=new THREE.BoxGeometry(.46,.07,.50).translate(0,-.025,-.005),back=new THREE.BoxGeometry(.46,.49,.07).translate(0,.185,-.235);far=mergeGeometries([seat,back],false);seat.dispose();back.dispose();
  }else if(g.type==='TorusGeometry'&&p.tubularSegments>=24){mid=new THREE.TorusGeometry(p.radius,p.tube,6,16,p.arc);far=new THREE.TorusGeometry(p.radius,p.tube,4,12,p.arc);
   // Preserve the template's plane; some rings are rotated in geometry, others by their mesh.
@@ -23,18 +23,18 @@ export function createSceneDetail(root){
   for(let i=0;i<mesh.count;i++){mesh.getMatrixAt(i,matrix);scale.setFromMatrixScale(matrix);maxScale=Math.max(maxScale,scale.x,scale.y,scale.z);}size=(geometry.userData.lodMetricSize||size)*maxScale;
   // Bolts, drain slots and hidden sub-pixel fittings may be omitted only once no instance can resolve.
   const micro=size<.35&&!/lens|lamp|light|luminous|signal|glow/i.test(mesh.name);if(!lod&&!micro)return;
-  mesh.computeBoundingBox();entries.push({mesh,lod,size,box:mesh.boundingBox.clone(),worldBox:new THREE.Box3(),level:0,hidden:false,canHide:micro,originalVisible:mesh.visible});
+  mesh.computeBoundingBox();entries.push({mesh,lod,size,box:mesh.boundingBox.clone(),worldBox:new THREE.Box3(),limits:geometry.userData.lodThresholds||[18,22,4.5,6],level:0,hidden:false,canHide:micro,originalVisible:mesh.visible});
  });
  const transform=new THREE.Matrix4();transform.elements.fill(NaN);
  function refresh(){root.updateWorldMatrix(true,false);if(!root.matrixWorld.equals(transform)){root.updateWorldMatrix(true,true);transform.copy(root.matrixWorld);for(const e of entries)e.worldBox.copy(e.box).applyMatrix4(e.mesh.matrixWorld);}}
  refresh();stats.groups=entries.length;stats.lodGroups=entries.filter(e=>e.lod).length;
  function update(camera,height=720){refresh();const projection=height/(2*Math.tan(camera.fov*Math.PI/360));stats.high=stats.medium=stats.low=stats.hiddenSubpixelGroups=0;
   for(const e of entries){const d=Math.max(.1,e.worldBox.distanceToPoint(camera.position)),px=e.size*projection/d;let level=e.level;
-   if(e.lod){if(level===0&&px<18)level=1;else if(level===1&&px>22)level=0;else if(level===1&&px<4.5)level=2;else if(level===2&&px>6)level=1;if(level!==e.level){e.mesh.geometry=e.lod[level];e.level=level;stats.changes++;}stats[['high','medium','low'][level]]++;}
+   if(e.lod){if(level===0&&px<e.limits[0])level=1;else if(level===1&&px>e.limits[1])level=0;else if(level===1&&px<e.limits[2])level=2;else if(level===2&&px>e.limits[3])level=1;if(level!==e.level){e.mesh.geometry=e.lod[level];e.level=level;stats.changes++;}stats[['high','medium','low'][level]]++;}
    const hidden=e.canHide&&(e.hidden?px<.85:px<.55);if(hidden!==e.hidden){e.hidden=hidden;stats.changes++;}e.mesh.visible=e.originalVisible&&!hidden;if(hidden)stats.hiddenSubpixelGroups++;
   }return stats;
  }
- return {update,stats};
+ return {update,stats,references:()=>entries.filter(e=>e.lod).map(e=>({mesh:e.mesh,high:e.lod[0]}))};
 }
 // Scene-specific near planes avoid wasting nearly the entire depth buffer on cockpit distances.
 export function updateSceneDepth(camera,{mode='garage',distance=10,cameraMode=0,photo=false}={}){

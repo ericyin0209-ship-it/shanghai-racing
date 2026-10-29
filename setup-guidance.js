@@ -1,4 +1,4 @@
-import {defaultSetup} from './physics.js?v=224';
+import {defaultSetup} from './physics.js?v=229release';
 export const setupHelp={frontWing:'增加前翼可提高前轴响应，也会增加阻力。',rearWing:'增加后翼可提高高速稳定性，也会降低直道速度。',spring:'较软悬挂更易顺应路面；较硬设置限制车身运动。',damping:'较高阻尼抑制车身摆动；过高会影响起伏路面的贴地。',rideHeight:'提高车身可增加底板余量；降低会增加触底风险。',differential:'较低锁止更易转向；出弯油门需要渐进控制。',brakeBalance:'前移可提高制动稳定性；后移更易引起后轮锁死。',pressure:'胎压影响接触面积与升温；以热态温度和滑移反馈判断。'};
 export function circuitPreset(weather='clear'){if(weather==='storm')return {...defaultSetup,frontWing:37,rearWing:41,spring:115,damping:12,rideHeight:46,differential:35,pressure:22,compound:'wet'};if(weather==='rain')return {...defaultSetup,frontWing:35,rearWing:39,spring:120,damping:13,rideHeight:44,differential:40,pressure:22.5,compound:'intermediate'};return {...defaultSetup,frontWing:29,rearWing:33};}
 export function tyreMismatch(weather,compound){return weather==='storm'?compound!=='wet':weather==='rain'?!['intermediate','wet'].includes(compound):['clear','cloudy'].includes(weather)&&compound==='wet';}

@@ -16548,7 +16548,7 @@ class WebGLRenderer {
 
 		function projectObject( object, camera, groupOrder, sortObjects ) {
 
-			if ( object.visible === false ) return;
+			if ( object.visible === false || object.userData.shadowOnly === true ) return; // VERTEX: shadow proxies stay out of colour passes
 
 			const visible = object.layers.test( camera.layers );
 

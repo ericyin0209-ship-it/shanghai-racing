@@ -1,14 +1,15 @@
 import {Reflector} from './vendor/Reflector.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
 import * as THREE from 'three';
-import {landmarkMaterials,createLandmarkBuilder} from './circuit-surface.js?v=218i';
+import {landmarkMaterials,createLandmarkBuilder} from './circuit-surface.js?v=229release';
+import {PAVILION_HEIGHT} from './main-straight.js?v=229release';
 // Extend existing mapped footprints rather than inventing a second paddock layout.
 export function offsetFootprint(points,distance){
  const p=points.slice(0,-1),area=p.reduce((s,a,i)=>{const b=p[(i+1)%p.length];return s+a[0]*b[1]-b[0]*a[1];},0),sign=area>0?1:-1;
  return p.map((a,i)=>{const prev=p[(i+p.length-1)%p.length],next=p[(i+1)%p.length],d1=new THREE.Vector2(a[0]-prev[0],a[1]-prev[1]).normalize(),d2=new THREE.Vector2(next[0]-a[0],next[1]-a[1]).normalize(),n1=new THREE.Vector2(d1.y,-d1.x).multiplyScalar(sign),n2=new THREE.Vector2(d2.y,-d2.x).multiplyScalar(sign),sum=n1.clone().add(n2).normalize(),den=Math.max(.4,sum.dot(n1));return [a[0]+sum.x*distance/den,a[1]+sum.y*distance/den];});
 }
 export async function createPaddockDetail(scene,track){
- const data=await fetch('./surroundings-data.json').then(r=>r.json()),root=new THREE.Group();root.name='Mapped water pavilions and bank construction / 218';scene.add(root);const m=landmarkMaterials(),b=createLandmarkBuilder(root);let pavilions=0,bankSegments=0;const lakeParts=[];
+ const data=await fetch('./surroundings-data.json').then(r=>r.json()),root=new THREE.Group();root.name='Mapped water pavilions and bank construction / 218';scene.add(root);const m=landmarkMaterials(),b=createLandmarkBuilder(root),pavilionRoof=new THREE.MeshStandardMaterial({color:'#b5bbbc',metalness:.55,roughness:.42,side:THREE.DoubleSide});let pavilions=0,bankSegments=0;const lakeParts=[];
  for(const f of data.features){
   const p=f.points;if(!p||p.length<4)continue;const cx=p.reduce((s,a)=>s+a[0],0)/p.length,cz=p.reduce((s,a)=>s+a[1],0)/p.length;
   if(track.nearest(cx,cz).distance>430)continue;
@@ -17,11 +18,14 @@ export async function createPaddockDetail(scene,track){
    for(let i=0;i<p.length-1;i++){const a=p[i],q=p[i+1],dx=q[0]-a[0],dz=q[1]-a[1],len=Math.hypot(dx,dz);if(len<.3)continue;b.box('mapped water bank coping',[.40,.22,len],[((a[0]+q[0])/2),.065,(a[1]+q[1])/2],m.concrete,Math.atan2(dx,dz));bankSegments++;}
   }
   if(f.kind!=='building'||f.tags['building:material']!=='glass'||cx>-75||cz<-430||cz>0)continue;
-  pavilions++;const height=parseFloat(f.tags.height)||5.5,roof=height+1.35,expanded=offsetFootprint(p,.85),shape=new THREE.Shape();shape.moveTo(expanded[0][0],-expanded[0][1]);for(const a of expanded.slice(1))shape.lineTo(a[0],-a[1]);shape.closePath();const g=new THREE.ExtrudeGeometry(shape,{depth:.18,bevelEnabled:false});g.rotateX(-Math.PI/2);g.translate(0,roof,0);const canopy=new THREE.Mesh(g,m.ivory);canopy.name='Pavilion extended roof with physical fascia';canopy.castShadow=canopy.receiveShadow=true;root.add(canopy);
+  // Photos 02/03: two glazed storeys under a deep (~2 m) low hipped metal roof. Overhang and pitch are estimates.
+  pavilions++;const height=PAVILION_HEIGHT,roof=height+1.35,expanded=offsetFootprint(p,2.0),shape=new THREE.Shape();shape.moveTo(expanded[0][0],-expanded[0][1]);for(const a of expanded.slice(1))shape.lineTo(a[0],-a[1]);shape.closePath();const g=new THREE.ExtrudeGeometry(shape,{depth:.3,bevelEnabled:false});g.rotateX(-Math.PI/2);g.translate(0,roof,0);const canopy=new THREE.Mesh(g,pavilionRoof);canopy.name='Pavilion extended roof with physical fascia';canopy.castShadow=canopy.receiveShadow=true;root.add(canopy);
+  {const c=expanded.reduce((s,a)=>[s[0]+a[0]/expanded.length,s[1]+a[1]/expanded.length],[0,0]),inner=expanded.map(a=>[c[0]+(a[0]-c[0])*.3,c[1]+(a[1]-c[1])*.3]),y0=roof+.3,y1=roof+1.0,pos=[],idx=[];expanded.forEach((a,i)=>{const j=(i+1)%expanded.length,k=pos.length/3;pos.push(a[0],y0,a[1],expanded[j][0],y0,expanded[j][1],inner[j][0],y1,inner[j][1],inner[i][0],y1,inner[i][1]);idx.push(k,k+1,k+2,k,k+2,k+3);});const k=pos.length/3;inner.forEach(a=>pos.push(a[0],y1,a[1]));for(let i=1;i<inner.length-1;i++)idx.push(k,k+i,k+i+1);const hg=new THREE.BufferGeometry();hg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));hg.setIndex(idx);hg.computeVertexNormals();const hip=new THREE.Mesh(hg,pavilionRoof);hip.name='Pavilion low hipped roof';hip.castShadow=hip.receiveShadow=true;root.add(hip);}
   for(let i=0;i<p.length-1;i++){
    const a=p[i],q=p[i+1],dx=q[0]-a[0],dz=q[1]-a[1],len=Math.hypot(dx,dz);if(len<.3)continue;const angle=Math.atan2(dx,dz),ux=dx/len,uz=dz/len;
    b.box('pavilion recessed soffit strip',[.12,.028,len*.86],[(a[0]+q[0])/2,roof-.014,(a[1]+q[1])/2],m.glow,angle);
    for(let s=0;s<len-.1;s+=1.8){const t=(s+.04)/len;b.box('pavilion fine curtain mullions',[.075,height,.075],[a[0]+dx*t,1.1+height/2,a[1]+dz*t],m.alloy);}
+   b.box('pavilion floor band',[.16,.32,len],[(a[0]+q[0])/2,1.1+height/2,(a[1]+q[1])/2],m.alloy,angle);
    // Stilt collars seat onto mapped pier centres, not onto an invented second foundation grid.
    b.box('pavilion concrete pier collar',[.42,.20,.42],[a[0],.12,a[1]],m.concrete);
    b.box('pavilion parapet cap',[.18,.16,len],[(a[0]+q[0])/2,roof+.1,(a[1]+q[1])/2],m.alloy,angle);

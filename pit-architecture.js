@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {PIT_BAY,PIT_BAYS,PIT_BAY0,PIT_K} from './main-straight.js?v=229release';
 // Open service bays, chamfered piers, shutter mechanics and pit-wall stations.
 // Mapped footprint retained; details are photograph-informed estimates, not CAD.
 export function createPitArchitecture(scene){
@@ -8,6 +9,8 @@ export function createPitArchitecture(scene){
  const dark=new THREE.MeshStandardMaterial({color:'#253130',metalness:.35,roughness:.64});
  const black=new THREE.MeshStandardMaterial({color:'#101817',roughness:.86});
  const paint=new THREE.MeshStandardMaterial({color:'#075c50',metalness:.43,roughness:.38});
+ // preview.27: photo 04 shows the bay interiors in shade, mid-grey walls behind open doors, not bright facade concrete
+ const interior=new THREE.MeshStandardMaterial({color:'#6c716e',roughness:.9});
  const luminous=new THREE.MeshStandardMaterial({color:'#d3e2db',emissive:'#d3e2db',emissiveIntensity:2.6,roughness:.4});
  const batches=new Map(),pose=new THREE.Object3D();
  function add(name,g,m,p,rotation=0){if(!batches.has(name))batches.set(name,{g,m,items:[]});else g.dispose();batches.get(name).items.push({p,rotation});}
@@ -16,37 +19,37 @@ export function createPitArchitecture(scene){
  // Chamfered, forward-raked pier profile, visible between the recessed openings.
  const shape=new THREE.Shape();shape.moveTo(-36.12,0);shape.lineTo(-35.56,0);shape.lineTo(-34.85,3.65);shape.lineTo(-35.14,4.30);shape.lineTo(-36.34,4.30);shape.lineTo(-36.34,3.75);shape.closePath();
  const pier=new THREE.ExtrudeGeometry(shape,{depth:.56,bevelEnabled:true,bevelThickness:.025,bevelSize:.025,bevelSegments:2,steps:1});pier.translate(0,0,-.28);
- for(let i=0;i<30;i++){
-  const z=-42-i*14.4;
+ for(let i=0;i<PIT_BAYS;i++){
+  const z=PIT_BAY0-i*PIT_BAY;
   // Recessed rear walls and partitions make real openings instead of black decals.
-  box('Bay rear panel',[-57.75,2.2,z],[.18,4.4,14.3],dark);
-  box('Bay partition',[-47.0,2.2,z+7.1],[21.3,4.4,.17],concrete);
-  add('Chamfered concrete piers',pier.clone(),concrete,[0,0,z+6.7]);
-  box('Shutter head casing',[-35.8,4.01,z],[.65,.58,12.5],alloy);
-  for(let j=0;j<9;j++)box('Shutter ribbed lintel',[-35.44,3.82+j*.048,z],[.022,.016,12.35],dark);
-  for(const dz of [-6.3,6.3]){
+  box('Bay rear panel',[-57.75,2.2,z],[.18,4.4,PIT_BAY-.1],dark);
+  box('Bay partition',[-47.0,2.2,z+PIT_BAY/2-.1],[21.3,4.4,.17],interior);
+  add('Chamfered concrete piers',pier.clone(),concrete,[0,0,z+PIT_BAY/2-.5]);
+  box('Shutter head casing',[-35.8,4.01,z],[.65,.58,12.5*PIT_K],alloy);
+  for(let j=0;j<9;j++)box('Shutter ribbed lintel',[-35.44,3.82+j*.048,z],[.022,.016,12.35*PIT_K],dark);
+  for(const dz of [-6.3*PIT_K,6.3*PIT_K]){
    box('Shutter side guide',[-35.75,1.90,z+dz],[.12,3.8,.10],alloy);
    for(const y of [.32,1.7,3.2])cylinder('Pier anchor fastener',[-35.66,y,z+dz],.021,.025,alloy,'x');
   }
-  cylinder('Shutter roller',[-36.4,3.92,z],.15,12.35,alloy,'z');
-  box('Inner ceiling',[-46.8,4.27,z],[20.4,.12,14.1],dark);
+  cylinder('Shutter roller',[-36.4,3.92,z],.15,12.35*PIT_K,alloy,'z');
+  box('Inner ceiling',[-46.8,4.27,z],[23.3,.12,PIT_BAY-.3],dark);
   for(const x of [-38.6,-44,-50]){
    box('Bay overhead strip case',[x,4.14,z],[.32,.10,2.8],black);
    box('Bay overhead luminous lens',[x,4.078,z],[.24,.022,2.66],luminous);
   }
   // Full depth floor joints and painted bay service limits.
-  box('Concrete bay floor',[-46.8,.065,z],[20.4,.11,14.1],concrete);
-  box('Bay floor joint',[-46.8,.125,z],[20.3,.003,.016],black);
-  box('Service threshold',[-35.65,.135,z],[.55,.018,12.25],alloy);
-  for(let j=0;j<20;j++)box('Threshold drain slots',[-35.65,.147,z-5.9+j*.62],[.42,.007,.027],black);
+  box('Concrete bay floor',[-46.8,.065,z],[23.3,.11,PIT_BAY-.3],concrete);
+  box('Bay floor joint',[-46.8,.125,z],[23.2,.003,.016],black);
+  box('Service threshold',[-35.65,.135,z],[.55,.018,12.25*PIT_K],alloy);
+  for(let j=0;j<20;j++)box('Threshold drain slots',[-35.65,.147,z+(-5.9+j*.62)*PIT_K],[.42,.007,.027],black);
   // Team neutral cabinets inside alternate bays, leaving the lane clear.
   if(i%2===0){
-   box('Bay service cabinet',[-54.9,.64,z+4.7],[1.4,1.17,2.0],paint);
-   box('Bay cabinet worktop',[-54.9,1.25,z+4.7],[1.5,.055,2.1],alloy);
-   for(let j=0;j<6;j++)box('Bay cabinet drawer',[-54.18,.30+j*.14,z+4.7],[.026,.11,1.83],dark);
+   box('Bay service cabinet',[-54.9,.64,z+4.7*PIT_K],[1.4,1.17,2.0],paint);
+   box('Bay cabinet worktop',[-54.9,1.25,z+4.7*PIT_K],[1.5,.055,2.1],alloy);
+   for(let j=0;j<6;j++)box('Bay cabinet drawer',[-54.18,.30+j*.14,z+4.7*PIT_K],[.026,.11,1.83],dark);
   }
   // Small rain-channel downspout and projecting façade light, outside openings.
-  cylinder('Facade drainage joint',[-35.62,4.65,z+6.5],.086,.12,alloy);
+  cylinder('Facade drainage joint',[-35.62,4.65,z+6.5*PIT_K],.086,.12,alloy);
  }
  pier.dispose();
  // Physical pit-wall timing station frames, visibly separate from the barriers.

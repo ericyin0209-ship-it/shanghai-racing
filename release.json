@@ -1,10 +1,13 @@
 {
-  "version": "2.0.0-preview.25",
+  "version": "2.0.0-preview.34",
   "channel": "web-preview",
   "nativeIncluded": false,
   "telemetryUpload": false,
   "displayName": "VERTEX 极点",
   "carAsset": "AMR23-R3",
   "publication": "not uploaded",
-  "accountServices": "disabled; direct game entry; local driving archive retained"
+  "accountServices": "disabled; direct game entry; local driving archive retained",
+  "upgrade": "Anatomical hand calibration; reauthored front/rear jack, empty walk and four fitter footwork clips; staged arrival; natural free arms and downward stabiliser elbows; cached cleanup paths and authored tyre trajectories; FIA apex bollard and workshop detail. Normalized bone transforms and prevented scale drift during repeated pose solves.",
+  "buildId": "p34-20261029-r3",
+  "acceptance": "Candidate only. Functional stop and release tests passed; absolute zero-intersection and human-level fidelity not certified."
 }

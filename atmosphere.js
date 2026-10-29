@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {weatherNoise,cloudVolumeGLSL} from './weather-noise.js?v=221';
+import {weatherNoise,cloudVolumeGLSL} from './weather-noise.js?v=229release';
 // A shared, periodic density atlas replaces per-fragment multi-octave hash noise.
 // Twelve slab samples and local sunlight probes resolve cloud thickness and silver edges.
 export function createAtmosphere(scene,hdr){

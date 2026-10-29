@@ -1,5 +1,5 @@
-import {constructionFinish,landmarkMaterials,createLandmarkBuilder} from './circuit-surface.js?v=218i';
-import {createAccessBuilder,accessMaterials,addLotusAccess} from './spectator-access.js?v=225b';
+import {constructionFinish,landmarkMaterials,createLandmarkBuilder} from './circuit-surface.js?v=229release';
+import {createAccessBuilder,accessMaterials,addLotusAccess} from './spectator-access.js?v=229release';
 import * as THREE from 'three';
 
 // preview.25: the two lotus-canopy stands are placed on the OpenStreetMap footprints
@@ -43,28 +43,36 @@ float stitch=abs(fract(sailUV.x*24.)-.5);float aa=fwidth(sailUV.x*24.);float sea
  const steel=new THREE.MeshStandardMaterial({color:'#d9dcd6',metalness:.35,roughness:.45});
  const concrete=new THREE.MeshStandardMaterial({color:'#aaa89f',roughness:.92});
  const seatMaterial=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.62});
- const R=LOTUS_RADIUS,rows=28,segments=128,positions=[],indices=[],uv=[];
- for(let r=0;r<=rows;r++)for(let i=0;i<=segments;i++){
-  const u=.05+.95*r/rows,t=i/segments*Math.PI*2,radius=R*u;
-  positions.push(Math.cos(t)*radius,lotusHeight(u)-.07*Math.sin(t*24)*u*u,Math.sin(t)*radius);uv.push(i/segments,u);
-  if(r&&i){const a=r*(segments+1)+i,b=a-1,c=a-segments-1,d=c-1;indices.push(a,c,b,b,c,d);}
- }
- const membrane=new THREE.BufferGeometry();membrane.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));membrane.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));membrane.setIndex(indices);membrane.computeVertexNormals();
+ const R=LOTUS_RADIUS;
+ function membraneGeometry(rows,segments){const positions=[],indices=[],uv=[];
+  for(let r=0;r<=rows;r++)for(let i=0;i<=segments;i++){
+   const u=.05+.95*r/rows,t=i/segments*Math.PI*2,radius=R*u;
+   positions.push(Math.cos(t)*radius,lotusHeight(u)-.07*Math.sin(t*24)*u*u,Math.sin(t)*radius);uv.push(i/segments,u);
+   if(r&&i){const a=r*(segments+1)+i,b=a-1,c=a-segments-1,d=c-1;indices.push(a,c,b,b,c,d);}
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();return g;}
+ // preview.27: screen-size LOD for the 26 membranes (7168 tris each). Mid keeps 3 vertices per scallop of the 24-lobe
+ // edge; far keeps 2, so the rim still reads as scalloped from the circuit. The switch is sized on a 5 m patch of membrane
+ // rather than the whole 21 m canopy: mid from ~170 m, far from ~690 m at 720 px height.
+ const membrane=membraneGeometry(28,128);membrane.userData.environmentLOD=[membraneGeometry(14,72),membraneGeometry(8,48)];membrane.userData.lodMetricSize=5;
  const batch=new Map(),pose=new THREE.Object3D();
  function add(name,geometry,material,matrix,colour=null){if(!batch.has(name))batch.set(name,{geometry,material,items:[]});batch.get(name).items.push({matrix,colour});}
  function place(name,geometry,material,frame,p,rotation=[0,0,0],scale=[1,1,1],colour=null){pose.position.set(...p);pose.rotation.set(...rotation);pose.scale.set(...scale);pose.updateMatrix();add(name,geometry,material,new THREE.Matrix4().multiplyMatrices(frame,pose.matrix),colour);}
  const slab=new THREE.BoxGeometry(1,1,1),post=new THREE.CylinderGeometry(.032,.032,1,8),column=new THREE.CylinderGeometry(.36,.5,1,24),ring=new THREE.TorusGeometry(R,.10,8,128),beamGeometry=new THREE.CylinderGeometry(.075,.075,1,10),spire=new THREE.ConeGeometry(.16,1,12);
- const ribCurves=[];for(let j=0;j<16;j++){const t=j*Math.PI/8,points=[];for(let k=0;k<=12;k++){const u=k/12;points.push(new THREE.Vector3(Math.cos(t)*(R-.1)*u,lotusHeight(u)-.06,Math.sin(t)*(R-.1)*u));}ribCurves.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),20,.055,6,false));}
+ const ribCurves=[];for(let j=0;j<16;j++){const t=j*Math.PI/8,points=[];for(let k=0;k<=12;k++){const u=k/12;points.push(new THREE.Vector3(Math.cos(t)*(R-.1)*u,lotusHeight(u)-.06,Math.sin(t)*(R-.1)*u));}const curve=new THREE.CatmullRomCurve3(points),rib=new THREE.TubeGeometry(curve,20,.055,6,false);rib.userData.environmentLOD=[new THREE.TubeGeometry(curve,10,.055,4,false),new THREE.TubeGeometry(curve,6,.055,3,false)];rib.userData.lodMetricSize=4;ribCurves.push(rib);}
  const collar=new THREE.CylinderGeometry(.85,.68,.28,32);
  const support=(name,frame,a,b,r=.1)=>{const from=new THREE.Vector3(...a),to=new THREE.Vector3(...b),delta=to.clone().sub(from);pose.position.copy(from).add(to).multiplyScalar(.5);pose.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.clone().normalize());pose.scale.set(r/.075,delta.length(),r/.075);pose.updateMatrix();add(name,beamGeometry,steel,new THREE.Matrix4().multiplyMatrices(frame,pose.matrix));pose.quaternion.identity();};
  constructionFinish(concrete);const finishMaterials=landmarkMaterials(),landscape=createLandmarkBuilder(root);const accessBuilder=createAccessBuilder(root),accessMaterial=accessMaterials(),accessRoutes=[];
+ // Photo 08: the rear frame reads mid-grey, not near-white; only the lotus stands' own material copies are toned.
+ accessMaterial.concrete.color.set('#94958f');concrete.color.set('#9c9c95');
  let seatCount=0,unit=0;const stands=[];
  for(const feature of features){
   const stand=standFrames(feature,track);lotusViews.push({name:stand.name,centre:stand.centre,axis:stand.axis,front:stand.front,half:stand.spacing*(LOTUS_PER_STAND-1)/2+LOTUS_RADIUS});stands.push({name:stand.name,spacing:+stand.spacing.toFixed(2),shiftFromOutline:stand.shift,centre:stand.centre.map(v=>+v.toFixed(1))});
   const W=stand.spacing,half=W/2,seatCols=Math.floor((W-2.4)/.62);
   stand.frames.forEach((frame,canopy)=>{
-   // Alternate collar heights, as seen on the rear elevation photograph.
-   const lift=canopy%2?1.1:0,collarY=LOTUS_COLUMN+lift;
+   // Alternate collar heights: photo 08 shows clearly high and low canopies in turn (~3.5-4 m apart, scaled from the
+   // 12 m rear deck); 1.1 m was hardly visible. Estimate, not survey.
+   const lift=canopy%2?3.6:0,collarY=LOTUS_COLUMN+lift;
    landscape.box('lotus continuous public promenade',[8,.12,W-.02],[-22,.045,0],finishMaterials.paving,0,frame);
    for(const zz of [-half+3.2,half-3.2]){landscape.box('lotus grounded planter',[1.5,.45,2.4],[-22,.225,zz],finishMaterials.concrete,0,frame);landscape.box('lotus planted hedge',[1.2,.42,2.1],[-22,.64,zz],finishMaterials.foliage,0,frame);}
    landscape.box('lotus column base',[1.4,.26,1.4],[0,.13,0],finishMaterials.concrete,0,frame);
